@@ -1,0 +1,16 @@
+res://scenes/abilities/ability_controller.tscn
+res://scripts/enemies/enemy_spawner.gd
+res://scripts/gameplay/gameplay_root.gd
+res://scripts/hero/hero_attack_component.gd
+res://autoload/game_state.gd
+res://scripts/ui/upgrade_panel.gd
+res://autoload/game_constants.gd
+res://scripts/enemies/enemy.gd
+res://scripts/gameplay/battlefield.gd
+res://scripts/hero/hero.gd
+res://autoload/signal_bus.gd
+res://scripts/enemies/enemy_movement_component.gd
+res://scripts/gameplay/wave_controller.gd
+res://scripts/hero/hero_movement_component.gd
+res://scripts/ui/hud.gd
+res://scripts/gameplay/target_selector.gd

@@ -1,0 +1,36 @@
+extends Node
+
+const HERO_BASE_DAMAGE: float = 10.0
+const HERO_BASE_HP: float = 100.0
+const HERO_BASE_ATTACK_SPEED: float = 1.0
+const HERO_BASE_CRIT_CHANCE: float = 0.1
+const HERO_BASE_CRIT_MULTIPLIER: float = 1.5
+const HERO_MOVE_SPEED: float = 185.0
+const HERO_FLEE_DISTANCE: float = 170.0
+const HERO_PREFERRED_DISTANCE: float = 220.0
+const HERO_ATTACK_RANGE: float = 460.0
+const HERO_STRAFE_WEIGHT: float = 0.72
+const HERO_PROJECTILE_SPEED: float = 560.0
+
+const ENEMY_BASE_HP: float = 30.0
+const ENEMY_BASE_SPEED: float = 90.0
+const ENEMY_REWARD_GOLD: int = 5
+const ENEMY_REWARD_ESSENCE: int = 1
+const BOSS_BASE_HP_MULTIPLIER: float = 6.0
+const BOSS_BASE_SPEED_MULTIPLIER: float = 0.82
+const BOSS_REWARD_GOLD_MULTIPLIER: float = 5.0
+const BOSS_REWARD_ESSENCE_MULTIPLIER: float = 3.0
+
+const SPAWN_INTERVAL: float = 0.75
+const MAX_ACTIVE_ENEMIES: int = 3
+const BASE_NORMAL_ENEMIES_PER_WAVE: int = 4
+const WAVE_ENEMY_HP_SCALE: float = 1.18
+const WAVE_ENEMY_SPEED_SCALE: float = 1.03
+const WAVE_REWARD_SCALE: float = 1.12
+
+const ARENA_CENTER: Vector2 = Vector2(640.0, 360.0)
+const HERO_START_POSITION: Vector2 = Vector2(640.0, 360.0)
+const ENEMY_SPAWN_RADIUS_X: float = 440.0
+const ENEMY_SPAWN_RADIUS_Y: float = 220.0
+const ARENA_MIN: Vector2 = Vector2(56.0, 72.0)
+const ARENA_MAX: Vector2 = Vector2(1224.0, 684.0)

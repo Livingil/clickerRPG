@@ -1,0 +1,22 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/gameplay_root.gd" id="1_vyoms"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/battlefield.tscn" id="2_2hkrd"]
+[ext_resource type="PackedScene" path="res://scenes/hero/hero.tscn" id="3_7k6n1"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_spawner.tscn" id="4_hhu65"]
+[ext_resource type="PackedScene" path="res://scenes/abilities/ability_controller.tscn" id="5_k5vri"]
+[ext_resource type="Script" path="res://scripts/gameplay/wave_controller.gd" id="6_shqcu"]
+
+[node name="GameplayRoot" type="Node2D"]
+script = ExtResource("1_vyoms")
+
+[node name="Battlefield" parent="." instance=ExtResource("2_2hkrd")]
+
+[node name="Hero" parent="." instance=ExtResource("3_7k6n1")]
+
+[node name="EnemySpawner" parent="." instance=ExtResource("4_hhu65")]
+
+[node name="AbilityController" parent="." instance=ExtResource("5_k5vri")]
+
+[node name="WaveController" type="Node" parent="."]
+script = ExtResource("6_shqcu")

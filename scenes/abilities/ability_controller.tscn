@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://1uyf48xb1hqs"]
+
+[ext_resource type="Script" uid="uid://cqskrf77pawox" path="res://scripts/abilities/ability_controller.gd" id="1_uur5e"]
+[ext_resource type="PackedScene" path="res://scenes/hero/hero.tscn" id="2_ek3b4"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_base.tscn" id="3_3os2h"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_spawner.tscn" id="4_rlews"]
+
+[node name="AbilityController" type="Node" unique_id=623686516]
+script = ExtResource("1_uur5e")
+
+[node name="Hero" parent="." unique_id=1649769551 instance=ExtResource("2_ek3b4")]
+position = Vector2(328, 369)
+
+[node name="Enemy" parent="." unique_id=718350068 instance=ExtResource("3_3os2h")]
+position = Vector2(427, 546)
+
+[node name="EnemySpawner" parent="." unique_id=700758664 instance=ExtResource("4_rlews")]
+position = Vector2(619, 265)
