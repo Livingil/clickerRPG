@@ -7,12 +7,19 @@ const TargetSelector = preload("res://scripts/gameplay/target_selector.gd")
 @export var flee_distance: float = GameConstants.HERO_FLEE_DISTANCE
 @export var preferred_distance: float = GameConstants.HERO_PREFERRED_DISTANCE
 @export var strafe_weight: float = GameConstants.HERO_STRAFE_WEIGHT
+@export var flee_direction_lock_time: float = GameConstants.HERO_FLEE_DIRECTION_LOCK_TIME
 
 @onready var hero: Node2D = owner as Node2D
 
+var flee_direction: Vector2 = Vector2.ZERO
+var flee_direction_lock_left: float = 0.0
+
 func tick(delta: float) -> void:
+	flee_direction_lock_left = maxf(0.0, flee_direction_lock_left - delta)
+
 	var closest_enemy := _find_closest_enemy()
 	if closest_enemy == null:
+		flee_direction = Vector2.ZERO
 		_return_to_center(delta)
 		return
 
@@ -23,11 +30,16 @@ func tick(delta: float) -> void:
 		distance = 0.0
 
 	if distance < flee_distance:
-		_move_with_anti_corner(_build_kite_direction(offset), delta)
+		if flee_direction_lock_left <= 0.0 or flee_direction == Vector2.ZERO:
+			flee_direction = _build_kite_direction(offset)
+			flee_direction_lock_left = flee_direction_lock_time
+		_move_with_anti_corner(flee_direction, delta)
 	elif distance > preferred_distance:
+		flee_direction = Vector2.ZERO
 		var approach_direction := -offset.normalized()
 		_move_with_anti_corner(approach_direction, delta * 0.45)
 	else:
+		flee_direction = Vector2.ZERO
 		_move_with_anti_corner(_build_strafe_direction(offset), delta * 0.32)
 
 func _return_to_center(delta: float) -> void:
@@ -58,8 +70,10 @@ func _move_with_anti_corner(direction: Vector2, scaled_delta: float) -> void:
 	hero.global_position = clamped
 
 func _find_closest_enemy() -> Node2D:
-	var enemies := hero.get_tree().get_nodes_in_group("enemies")
-	return TargetSelector.closest_enemy(hero.global_position, enemies)
+	return TargetSelector.closest_enemy(hero.global_position, _get_enemies())
+
+func _get_enemies() -> Array[Node]:
+	return hero.get_tree().get_nodes_in_group("enemies")
 
 func _clamp_to_arena(position: Vector2) -> Vector2:
 	var radius: float = float(hero.get("body_radius"))

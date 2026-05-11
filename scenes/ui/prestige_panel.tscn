@@ -30,3 +30,9 @@ text = "Prestige"
 [node name="Hint" type="Label" parent="Margin/Content"]
 layout_mode = 2
 text = "Permanent reset layer"
+autowrap_mode = 3
+
+[node name="EchoStatus" type="Label" parent="Margin/Content"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Stored Echo: 0\nActive Echo: 0\nActive Bonus: +0.0 dmg  +0.00 atk/s"

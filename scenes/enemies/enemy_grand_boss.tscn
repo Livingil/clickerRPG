@@ -1,0 +1,47 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/enemy.gd" id="1_i1ng5"]
+[ext_resource type="Script" path="res://scripts/enemies/enemy_movement_component.gd" id="2_qxt1d"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1te3p"]
+radius = 34.0
+
+[node name="EnemyGrandBoss" type="CharacterBody2D"]
+script = ExtResource("1_i1ng5")
+collision_layer = 0
+collision_mask = 0
+max_hp = 120.0
+speed = 82.0
+attack_damage = 14.0
+reward_gold = 36
+reward_essence = 6
+body_radius = 34.0
+is_boss = true
+boss_kind = &"grand"
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.9, 0.2, 0.2, 1)
+polygon = PackedVector2Array(0, -42, 38, 30, -38, 30)
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+offset_left = -40.0
+offset_top = -60.0
+offset_right = 40.0
+offset_bottom = -48.0
+show_percentage = false
+max_value = 120.0
+value = 120.0
+
+[node name="BossTag" type="Label" parent="."]
+offset_left = -44.0
+offset_top = -84.0
+offset_right = 44.0
+offset_bottom = -62.0
+horizontal_alignment = 1
+text = "GRAND"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_1te3p")
+
+[node name="MovementComponent" type="Node" parent="."]
+script = ExtResource("2_qxt1d")

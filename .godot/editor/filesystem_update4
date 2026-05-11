@@ -14,3 +14,5 @@ res://scripts/gameplay/wave_controller.gd
 res://scripts/hero/hero_movement_component.gd
 res://scripts/ui/hud.gd
 res://scripts/gameplay/target_selector.gd
+res://scripts/ui/prestige_panel.gd
+res://scripts/effects/death_burst.gd

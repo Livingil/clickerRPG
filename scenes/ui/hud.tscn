@@ -52,6 +52,22 @@ text = "Essence:"
 layout_mode = 2
 text = "0"
 
+[node name="EchoCollectedLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "Echo:"
+
+[node name="EchoCollectedValue" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "0"
+
+[node name="EchoPowerLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "Active Echo:"
+
+[node name="EchoPowerValue" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "0"
+
 [node name="DpsLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
 layout_mode = 2
 text = "DPS:"
@@ -67,6 +83,22 @@ text = "Wave:"
 [node name="WaveValue" type="Label" parent="Root/Margin/Layout/TopBar"]
 layout_mode = 2
 text = "1"
+
+[node name="EchoActiveBonusLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "Active Bonus:"
+
+[node name="EchoActiveBonusValue" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "+0.0 dmg  +0.00 atk/s"
+
+[node name="EchoNextBonusLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "After Death:"
+
+[node name="EchoNextBonusValue" type="Label" parent="Root/Margin/Layout/TopBar"]
+layout_mode = 2
+text = "+0.0 dmg  +0.00 atk/s after death"
 
 [node name="BottomRow" type="HBoxContainer" parent="Root/Margin/Layout"]
 layout_mode = 2

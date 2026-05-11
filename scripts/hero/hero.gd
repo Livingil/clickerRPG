@@ -2,6 +2,7 @@ extends Node2D
 class_name Hero
 
 signal attack_performed(target: Enemy, damage: float, is_crit: bool)
+signal died
 
 @onready var stats_component: HeroStatsComponent = $StatsComponent
 @onready var attack_component: HeroAttackComponent = $AttackComponent
@@ -14,13 +15,13 @@ var hp: float = GameConstants.HERO_BASE_HP
 var body_radius: float = 24.0
 
 func _ready() -> void:
-	global_position = GameConstants.HERO_START_POSITION
-	stats_component.rebuild_from_game_state()
+	reset_for_new_run()
 	attack_component.attack_performed.connect(_on_attack_performed)
 	GameState.hero_stats_changed.connect(_on_hero_stats_changed)
-	_refresh_health_bar()
 
 func _physics_process(delta: float) -> void:
+	if hp <= 0.0:
+		return
 	movement_component.tick(delta)
 	attack_component.tick(delta)
 
@@ -35,6 +36,25 @@ func _on_attack_performed(target: Enemy, damage: float, is_crit: bool) -> void:
 
 func _on_hero_stats_changed() -> void:
 	stats_component.rebuild_from_game_state()
+
+func take_damage(amount: float) -> void:
+	if hp <= 0.0:
+		return
+
+	hp = maxf(0.0, hp - amount)
+	_refresh_health_bar()
+	if hp <= 0.0:
+		die()
+
+func reset_for_new_run() -> void:
+	global_position = GameConstants.HERO_START_POSITION
+	stats_component.rebuild_from_game_state()
+	hp = max_hp
+	_refresh_health_bar()
+
+func die() -> void:
+	died.emit()
+	SignalBus.hero_died.emit()
 
 func _refresh_health_bar() -> void:
 	health_bar.max_value = max_hp

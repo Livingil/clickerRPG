@@ -1,0 +1,47 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/enemy.gd" id="1_oxjk6"]
+[ext_resource type="Script" path="res://scripts/enemies/enemy_movement_component.gd" id="2_w9krq"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2nss1"]
+radius = 30.0
+
+[node name="EnemyMiniBoss" type="CharacterBody2D"]
+script = ExtResource("1_oxjk6")
+collision_layer = 0
+collision_mask = 0
+max_hp = 95.0
+speed = 78.0
+attack_damage = 10.0
+reward_gold = 24
+reward_essence = 4
+body_radius = 30.0
+is_boss = true
+boss_kind = &"mini"
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.95, 0.82, 0.18, 1)
+polygon = PackedVector2Array(0, -36, 32, 26, -32, 26)
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+offset_left = -34.0
+offset_top = -54.0
+offset_right = 34.0
+offset_bottom = -44.0
+show_percentage = false
+max_value = 95.0
+value = 95.0
+
+[node name="BossTag" type="Label" parent="."]
+offset_left = -38.0
+offset_top = -78.0
+offset_right = 38.0
+offset_bottom = -58.0
+horizontal_alignment = 1
+text = "MINI"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_2nss1")
+
+[node name="MovementComponent" type="Node" parent="."]
+script = ExtResource("2_w9krq")

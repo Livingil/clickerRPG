@@ -1,13 +1,17 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/enemies/enemy_spawner.gd" id="1_v2qnc"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/enemy_base.tscn" id="2_3svjk"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/enemy_boss.tscn" id="3_l7q0n"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_mini_boss.tscn" id="4_e53cx"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/enemy_grand_boss.tscn" id="5_y10t4"]
 
 [node name="EnemySpawner" type="Node2D"]
 script = ExtResource("1_v2qnc")
 enemy_scene = ExtResource("2_3svjk")
-boss_scene = ExtResource("3_l7q0n")
+wave_boss_scene = ExtResource("3_l7q0n")
+mini_boss_scene = ExtResource("4_e53cx")
+grand_boss_scene = ExtResource("5_y10t4")
 
 [node name="SpawnTimer" type="Timer" parent="."]
 one_shot = false

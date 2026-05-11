@@ -10,7 +10,14 @@ class_name GameplayRoot
 func _ready() -> void:
 	randomize()
 	hero.attack_performed.connect(ability_controller.handle_hero_attack)
+	hero.died.connect(_on_hero_died)
 	hero.set_battlefield(battlefield)
 	enemy_spawner.set_hero(hero)
 	enemy_spawner.set_battlefield(battlefield)
 	wave_controller.bind_spawner(enemy_spawner)
+
+func _on_hero_died() -> void:
+	GameState.activate_collected_echo()
+	enemy_spawner.clear_active_enemies()
+	wave_controller.reset_to_first_wave()
+	hero.reset_for_new_run()
