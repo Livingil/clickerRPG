@@ -4,6 +4,7 @@
 
 [node name="PrestigePanel" type="PanelContainer"]
 script = ExtResource("1_yj0gu")
+custom_minimum_size = Vector2(0, 220)
 offset_right = 260.0
 offset_bottom = 96.0
 
@@ -36,3 +37,7 @@ autowrap_mode = 3
 layout_mode = 2
 autowrap_mode = 3
 text = "Stored Echo: 0\nActive Echo: 0\nActive Bonus: +0.0 dmg  +0.00 atk/s"
+
+[node name="PrestigeButton" type="Button" parent="Margin/Content"]
+layout_mode = 2
+text = "Prestige Reset"

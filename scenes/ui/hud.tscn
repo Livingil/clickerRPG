@@ -1,12 +1,13 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_dwp5x"]
-[ext_resource type="PackedScene" path="res://scenes/ui/upgrade_panel.tscn" id="2_xv24b"]
-[ext_resource type="PackedScene" path="res://scenes/ui/ability_panel.tscn" id="3_v7vrq"]
-[ext_resource type="PackedScene" path="res://scenes/ui/prestige_panel.tscn" id="4_rhjs0"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_7at2v"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ability_panel.tscn" id="2_2h6j0"]
+[ext_resource type="PackedScene" path="res://scenes/ui/upgrade_panel.tscn" id="3_u4m8g"]
+[ext_resource type="PackedScene" path="res://scenes/ui/run_panel.tscn" id="4_q1p7m"]
+[ext_resource type="PackedScene" path="res://scenes/ui/prestige_panel.tscn" id="5_o6v2a"]
 
 [node name="HUD" type="CanvasLayer"]
-script = ExtResource("1_dwp5x")
+script = ExtResource("1_7at2v")
 
 [node name="Root" type="Control" parent="."]
 layout_mode = 3
@@ -16,102 +17,171 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Margin" type="MarginContainer" parent="Root"]
+[node name="HeaderBar" type="PanelContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 100.0
+grow_horizontal = 2
+
+[node name="HeaderMargin" type="MarginContainer" parent="Root/HeaderBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="HeaderContent" type="VBoxContainer" parent="Root/HeaderBar/HeaderMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopRow" type="HBoxContainer" parent="Root/HeaderBar/HeaderMargin/HeaderContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GoldValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Gold 0"
+
+[node name="EssenceValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ess 0"
+
+[node name="WaveValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Wave 1"
+
+[node name="DpsValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "DPS 0.0"
+
+[node name="BottomRow" type="HBoxContainer" parent="Root/HeaderBar/HeaderMargin/HeaderContent"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HpValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "HP 0/0"
+
+[node name="EchoValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Echo 0 | Active 0"
+
+[node name="SchoolValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Fire Lv0 S0/4"
+
+[node name="PrestigeToggleButton" type="Button" parent="Root/HeaderBar/HeaderMargin/HeaderContent/BottomRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(92, 0)
+text = "Prestige"
+toggle_mode = true
+
+[node name="BottomSheetContainer" type="PanelContainer" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -610.0
+offset_bottom = -68.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="SheetMargin" type="MarginContainer" parent="Root/BottomSheetContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="TabContentHost" type="Control" parent="Root/BottomSheetContainer/SheetMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="AbilityPanel" parent="Root/BottomSheetContainer/SheetMargin/TabContentHost" instance=ExtResource("2_2h6j0")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = -16.0
-offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Layout" type="VBoxContainer" parent="Root/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 16
+[node name="UpgradePanel" parent="Root/BottomSheetContainer/SheetMargin/TabContentHost" instance=ExtResource("3_u4m8g")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="TopBar" type="HBoxContainer" parent="Root/Margin/Layout"]
-layout_mode = 2
-theme_override_constants/separation = 16
+[node name="RunPanel" parent="Root/BottomSheetContainer/SheetMargin/TabContentHost" instance=ExtResource("4_q1p7m")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="GoldLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "Gold:"
+[node name="FooterBar" type="PanelContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -68.0
+grow_horizontal = 2
+grow_vertical = 0
 
-[node name="GoldValue" type="Label" parent="Root/Margin/Layout/TopBar"]
+[node name="FooterMargin" type="MarginContainer" parent="Root/FooterBar"]
 layout_mode = 2
-text = "0"
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
-[node name="EssenceLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
+[node name="FooterButtons" type="HBoxContainer" parent="Root/FooterBar/FooterMargin"]
 layout_mode = 2
-text = "Essence:"
+theme_override_constants/separation = 10
 
-[node name="EssenceValue" type="Label" parent="Root/Margin/Layout/TopBar"]
+[node name="SkillsButton" type="Button" parent="Root/FooterBar/FooterMargin/FooterButtons"]
 layout_mode = 2
-text = "0"
+size_flags_horizontal = 3
+text = "Skills"
+toggle_mode = true
 
-[node name="EchoCollectedLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
+[node name="UpgradesButton" type="Button" parent="Root/FooterBar/FooterMargin/FooterButtons"]
 layout_mode = 2
-text = "Echo:"
+size_flags_horizontal = 3
+text = "Upgrades"
+toggle_mode = true
 
-[node name="EchoCollectedValue" type="Label" parent="Root/Margin/Layout/TopBar"]
+[node name="RunButton" type="Button" parent="Root/FooterBar/FooterMargin/FooterButtons"]
 layout_mode = 2
-text = "0"
+size_flags_horizontal = 3
+text = "Run"
+toggle_mode = true
 
-[node name="EchoPowerLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "Active Echo:"
-
-[node name="EchoPowerValue" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "0"
-
-[node name="DpsLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "DPS:"
-
-[node name="DpsValue" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "0.0"
-
-[node name="WaveLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "Wave:"
-
-[node name="WaveValue" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "1"
-
-[node name="EchoActiveBonusLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "Active Bonus:"
-
-[node name="EchoActiveBonusValue" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "+0.0 dmg  +0.00 atk/s"
-
-[node name="EchoNextBonusLabel" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "After Death:"
-
-[node name="EchoNextBonusValue" type="Label" parent="Root/Margin/Layout/TopBar"]
-layout_mode = 2
-text = "+0.0 dmg  +0.00 atk/s after death"
-
-[node name="BottomRow" type="HBoxContainer" parent="Root/Margin/Layout"]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="UpgradePanel" parent="Root/Margin/Layout/BottomRow" instance=ExtResource("2_xv24b")]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="AbilityPanel" parent="Root/Margin/Layout/BottomRow" instance=ExtResource("3_v7vrq")]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="PrestigePanel" parent="Root/Margin/Layout/BottomRow" instance=ExtResource("4_rhjs0")]
-layout_mode = 2
-size_flags_vertical = 3
+[node name="PrestigePopup" parent="Root" instance=ExtResource("5_o6v2a")]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -180.0
+offset_right = 180.0
+offset_bottom = 40.0

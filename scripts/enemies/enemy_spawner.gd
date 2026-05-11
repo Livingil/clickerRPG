@@ -99,8 +99,8 @@ func _generate_spawn_position() -> Vector2:
 	if offset.length() < 180.0:
 		offset = offset.normalized() * 180.0
 
-	var position := GameConstants.ARENA_CENTER + offset
+	var spawn_position := GameConstants.ARENA_CENTER + offset
 	return Vector2(
-		clampf(position.x, GameConstants.ARENA_MIN.x + 24.0, GameConstants.ARENA_MAX.x - 24.0),
-		clampf(position.y, GameConstants.ARENA_MIN.y + 24.0, GameConstants.ARENA_MAX.y - 24.0)
+		clampf(spawn_position.x, GameConstants.ARENA_MIN.x + 24.0, GameConstants.ARENA_MAX.x - 24.0),
+		clampf(spawn_position.y, GameConstants.ARENA_MIN.y + 24.0, GameConstants.ARENA_MAX.y - 24.0)
 	)

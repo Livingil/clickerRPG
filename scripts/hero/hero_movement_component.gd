@@ -1,8 +1,6 @@
 extends Node
 class_name HeroMovementComponent
 
-const TargetSelector = preload("res://scripts/gameplay/target_selector.gd")
-
 @export var move_speed: float = GameConstants.HERO_MOVE_SPEED
 @export var flee_distance: float = GameConstants.HERO_FLEE_DISTANCE
 @export var preferred_distance: float = GameConstants.HERO_PREFERRED_DISTANCE

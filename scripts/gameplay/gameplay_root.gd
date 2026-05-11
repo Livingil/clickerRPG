@@ -10,6 +10,7 @@ class_name GameplayRoot
 func _ready() -> void:
 	randomize()
 	hero.attack_performed.connect(ability_controller.handle_hero_attack)
+	hero.attack_performed.connect(_on_hero_attack_performed)
 	hero.died.connect(_on_hero_died)
 	hero.set_battlefield(battlefield)
 	enemy_spawner.set_hero(hero)
@@ -21,3 +22,6 @@ func _on_hero_died() -> void:
 	enemy_spawner.clear_active_enemies()
 	wave_controller.reset_to_first_wave()
 	hero.reset_for_new_run()
+
+func _on_hero_attack_performed(_target: Enemy, _damage: float, _is_crit: bool) -> void:
+	GameState.add_active_school_mastery_xp(1)

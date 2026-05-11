@@ -1,8 +1,6 @@
 extends Node
 class_name HeroStatsComponent
 
-const CombatStats = preload("res://scripts/core/stats/combat_stats.gd")
-
 var current_stats: CombatStats = CombatStats.new()
 
 func rebuild_from_game_state() -> void:

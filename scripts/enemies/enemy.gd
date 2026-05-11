@@ -22,9 +22,12 @@ const DeathBurstScene = preload("res://scenes/effects/death_burst.tscn")
 @onready var health_bar: ProgressBar = $HealthBar
 @onready var body: Polygon2D = $Body
 @onready var boss_tag: Label = $BossTag
+@onready var vulnerability_label: Label = $VulnerabilityLabel
 
 var hp: float = 0.0
 var attack_cooldown_left: float = 0.0
+var vulnerability_stacks: Dictionary = {}
+var vulnerability_timers: Dictionary = {}
 
 var hero_target: Hero
 
@@ -34,11 +37,12 @@ func _ready() -> void:
 	attack_cooldown_left = randf_range(0.05, attack_cooldown)
 	_setup_boss_tag()
 	_refresh_health_bar()
-	SignalBus.enemy_spawned.emit(self)
+	SignalBus.emit_enemy_spawned(self)
 
 func _physics_process(delta: float) -> void:
 	movement_component.move_towards_target(hero_target, delta)
 	_tick_attack(delta)
+	_tick_vulnerabilities(delta)
 
 func set_target(hero: Hero) -> void:
 	hero_target = hero
@@ -50,12 +54,18 @@ func take_damage(amount: float) -> void:
 	if hp <= 0.0:
 		die()
 
+func take_school_damage(amount: float, school_id: StringName) -> void:
+	var school_damage := amount * get_vulnerability_multiplier(school_id)
+	take_damage(school_damage)
+	apply_vulnerability_stack(school_id)
+
 func die() -> void:
 	_spawn_death_burst()
 	GameState.add_gold(reward_gold)
 	GameState.add_essence(reward_essence)
 	GameState.add_echo(GameState.get_echo_gain_for_enemy(boss_kind))
-	SignalBus.enemy_killed.emit(self)
+	GameState.add_active_school_mastery_xp(GameState.get_mastery_xp_for_enemy(boss_kind))
+	SignalBus.emit_enemy_killed(self)
 	died.emit(self)
 	queue_free()
 
@@ -92,6 +102,59 @@ func get_chase_position() -> Vector2:
 func _refresh_health_bar() -> void:
 	health_bar.max_value = max_hp
 	health_bar.value = maxf(0.0, hp)
+	_refresh_vulnerability_label()
+
+func apply_vulnerability_stack(school_id: StringName) -> void:
+	var current := int(vulnerability_stacks.get(school_id, 0))
+	vulnerability_stacks[school_id] = min(current + 1, SchoolRules.VULNERABILITY_MAX_STACKS)
+	vulnerability_timers[school_id] = SchoolRules.VULNERABILITY_DURATION
+	_refresh_vulnerability_label()
+
+func get_vulnerability_multiplier(school_id: StringName) -> float:
+	var stacks := int(vulnerability_stacks.get(school_id, 0))
+	return 1.0 + stacks * SchoolRules.VULNERABILITY_STACK_BONUS
+
+func _tick_vulnerabilities(delta: float) -> void:
+	if vulnerability_timers.is_empty():
+		return
+
+	var expired: Array[StringName] = []
+	for school_id_variant in vulnerability_timers.keys():
+		var school_id := school_id_variant as StringName
+		var time_left := float(vulnerability_timers[school_id]) - delta
+		if time_left <= 0.0:
+			expired.append(school_id)
+		else:
+			vulnerability_timers[school_id] = time_left
+
+	for school_id in expired:
+		vulnerability_timers.erase(school_id)
+		vulnerability_stacks.erase(school_id)
+
+	if expired.size() > 0:
+		_refresh_vulnerability_label()
+
+func _refresh_vulnerability_label() -> void:
+	var best_school := _get_strongest_vulnerability_school()
+	if best_school == &"":
+		vulnerability_label.visible = false
+		return
+
+	var stacks := int(vulnerability_stacks.get(best_school, 0))
+	var element_name := String(SchoolRules.SCHOOL_DEFINITIONS.get(best_school, {}).get("name", ""))
+	vulnerability_label.visible = true
+	vulnerability_label.text = "%s x%d" % [element_name, stacks]
+
+func _get_strongest_vulnerability_school() -> StringName:
+	var best_school: StringName = &""
+	var best_stacks := 0
+	for school_id_variant in vulnerability_stacks.keys():
+		var school_id := school_id_variant as StringName
+		var stacks := int(vulnerability_stacks[school_id])
+		if stacks > best_stacks:
+			best_stacks = stacks
+			best_school = school_id
+	return best_school
 
 func _setup_boss_tag() -> void:
 	match boss_kind:

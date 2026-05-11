@@ -9,6 +9,7 @@ signal died
 @onready var movement_component: Node = $MovementComponent
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var health_bar: ProgressBar = $HealthBar
+@onready var body: Polygon2D = $Body
 
 var max_hp: float = GameConstants.HERO_BASE_HP
 var hp: float = GameConstants.HERO_BASE_HP
@@ -31,8 +32,10 @@ func set_battlefield(battlefield: Battlefield) -> void:
 func _on_attack_performed(target: Enemy, damage: float, is_crit: bool) -> void:
 	if animation_player.has_animation("attack"):
 		animation_player.play("attack")
+	else:
+		_play_body_pulse(Color(1.0, 0.95, 0.85, 1.0), 1.08, 0.09)
 	attack_performed.emit(target, damage, is_crit)
-	SignalBus.hero_attack_performed.emit(target, damage, is_crit)
+	SignalBus.emit_hero_attack_performed(target, damage, is_crit)
 
 func _on_hero_stats_changed() -> void:
 	stats_component.rebuild_from_game_state()
@@ -54,7 +57,16 @@ func reset_for_new_run() -> void:
 
 func die() -> void:
 	died.emit()
-	SignalBus.hero_died.emit()
+	SignalBus.emit_hero_died()
+
+func play_skill_cast(skill_name: StringName) -> void:
+	match skill_name:
+		&"ember_chain":
+			_play_body_pulse(Color(1.0, 0.55, 0.25, 1.0), 1.14, 0.16)
+		&"cinder_burst":
+			_play_body_pulse(Color(1.0, 0.35, 0.12, 1.0), 1.2, 0.18)
+		_:
+			_play_body_pulse(Color(0.85, 0.85, 1.0, 1.0), 1.1, 0.12)
 
 func _refresh_health_bar() -> void:
 	health_bar.max_value = max_hp
@@ -65,3 +77,10 @@ func clamp_to_arena() -> void:
 		clampf(global_position.x, GameConstants.ARENA_MIN.x + body_radius, GameConstants.ARENA_MAX.x - body_radius),
 		clampf(global_position.y, GameConstants.ARENA_MIN.y + body_radius, GameConstants.ARENA_MAX.y - body_radius)
 	)
+
+func _play_body_pulse(color: Color, scale_amount: float, duration: float) -> void:
+	body.modulate = color
+	body.scale = Vector2.ONE * scale_amount
+	var tween := create_tween()
+	tween.tween_property(body, "modulate", Color(1, 1, 1, 1), duration)
+	tween.parallel().tween_property(body, "scale", Vector2.ONE, duration)

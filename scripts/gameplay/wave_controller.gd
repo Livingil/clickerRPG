@@ -1,8 +1,6 @@
 extends Node
 class_name WaveController
 
-signal wave_changed(current_wave: int)
-
 var current_wave: int = 1
 var enemy_spawner: EnemySpawner
 var normal_spawned_this_wave: int = 0
@@ -135,5 +133,4 @@ func _start_wave(wave_number: int) -> void:
 	wave_boss_defeated = false
 	milestone_spawned_this_wave = false
 	milestone_defeated_this_wave = false
-	wave_changed.emit(current_wave)
-	SignalBus.wave_changed.emit(current_wave)
+	SignalBus.emit_wave_changed(current_wave)

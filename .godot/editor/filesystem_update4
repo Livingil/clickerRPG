@@ -16,3 +16,13 @@ res://scripts/ui/hud.gd
 res://scripts/gameplay/target_selector.gd
 res://scripts/ui/prestige_panel.gd
 res://scripts/effects/death_burst.gd
+res://scripts/abilities/ability_base.gd
+res://scripts/abilities/ability_controller.gd
+res://scripts/effects/magic_projectile.gd
+res://scripts/ui/ability_panel.gd
+res://scripts/abilities/fire_ember_chain_ability.gd
+res://scripts/hero/hero_stats_component.gd
+res://scripts/abilities/fire_cinder_burst_ability.gd
+res://scripts/core/progression/school_rules.gd
+res://scripts/ui/run_panel.gd
+res://scripts/effects/fire_chain_arc.gd

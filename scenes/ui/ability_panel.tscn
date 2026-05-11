@@ -4,6 +4,7 @@
 
 [node name="AbilityPanel" type="PanelContainer"]
 script = ExtResource("1_6adk7")
+custom_minimum_size = Vector2(0, 360)
 offset_right = 260.0
 offset_bottom = 120.0
 
@@ -27,6 +28,25 @@ theme_override_constants/separation = 8
 layout_mode = 2
 text = "Abilities"
 
-[node name="Hint" type="Label" parent="Margin/Content"]
+[node name="SchoolValue" type="Label" parent="Margin/Content"]
 layout_mode = 2
-text = "Fire / Lightning / Poison"
+text = "School"
+autowrap_mode = 3
+
+[node name="MasteryValue" type="Label" parent="Margin/Content"]
+layout_mode = 2
+text = "Lv.0  XP 0"
+autowrap_mode = 3
+
+[node name="SlotValue" type="Label" parent="Margin/Content"]
+layout_mode = 2
+text = "0 / 4 permanent skill slots"
+autowrap_mode = 3
+
+[node name="AvailableButtons" type="VBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SkillRows" type="VBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6

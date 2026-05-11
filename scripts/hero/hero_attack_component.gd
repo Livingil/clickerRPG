@@ -1,9 +1,6 @@
 extends Node
 class_name HeroAttackComponent
 
-const TargetSelector = preload("res://scripts/gameplay/target_selector.gd")
-const MagicProjectile = preload("res://scripts/effects/magic_projectile.gd")
-
 signal attack_performed(target: Enemy, damage: float, is_crit: bool)
 
 @onready var hero: Hero = owner as Hero
@@ -56,9 +53,9 @@ func _spawn_projectile(target: Enemy, damage: float, is_crit: bool) -> void:
 
 	var projectile := projectile_scene.instantiate() as MagicProjectile
 	if projectile == null:
-		target.take_damage(damage)
+		target.take_school_damage(damage, GameState.active_school)
 		return
 
 	projectile.global_position = attack_point.global_position
-	projectile.setup(target, damage, is_crit)
+	projectile.setup(target, damage, is_crit, GameState.active_school)
 	battlefield.projectile_container.add_child(projectile)

@@ -44,9 +44,9 @@ const WAVE_ENEMY_SPEED_SCALE: float = 1.05
 const WAVE_ENEMY_DAMAGE_SCALE: float = 1.16
 const WAVE_REWARD_SCALE: float = 1.12
 
-const ARENA_CENTER: Vector2 = Vector2(640.0, 360.0)
-const HERO_START_POSITION: Vector2 = Vector2(640.0, 360.0)
-const ENEMY_SPAWN_RADIUS_X: float = 440.0
-const ENEMY_SPAWN_RADIUS_Y: float = 220.0
-const ARENA_MIN: Vector2 = Vector2(56.0, 72.0)
-const ARENA_MAX: Vector2 = Vector2(1224.0, 684.0)
+const ARENA_CENTER: Vector2 = Vector2(360.0, 780.0)
+const HERO_START_POSITION: Vector2 = Vector2(360.0, 780.0)
+const ENEMY_SPAWN_RADIUS_X: float = 250.0
+const ENEMY_SPAWN_RADIUS_Y: float = 320.0
+const ARENA_MIN: Vector2 = Vector2(40.0, 250.0)
+const ARENA_MAX: Vector2 = Vector2(680.0, 1230.0)
