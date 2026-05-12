@@ -1,6 +1,8 @@
 extends Node
 class_name AbilityController
 
+const FireAshStormAbilityScript = preload("res://scripts/abilities/fire_ash_storm_ability.gd")
+
 var active_abilities: Array[AbilityBase] = []
 var active_skill_ids: Array[StringName] = []
 var hero: Hero
@@ -48,3 +50,5 @@ func _append_ability_from_skill_id(skill_id: StringName) -> void:
 			active_abilities.append(FireEmberChainAbility.new(self))
 		&"cinder_burst":
 			active_abilities.append(FireCinderBurstAbility.new(self))
+		&"ash_storm":
+			active_abilities.append(FireAshStormAbilityScript.new(self))

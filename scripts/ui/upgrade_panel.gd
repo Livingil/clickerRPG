@@ -12,6 +12,13 @@ func _ready() -> void:
 	_refresh_all_rows()
 
 func _build_rows() -> void:
+	if GameState.get_upgrade_ids().is_empty():
+		var placeholder := Label.new()
+		placeholder.text = "Gold upgrades are disabled in the current balance pass."
+		placeholder.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		rows_container.add_child(placeholder)
+		return
+
 	for upgrade_id: StringName in GameState.get_upgrade_ids():
 		var row := HBoxContainer.new()
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL

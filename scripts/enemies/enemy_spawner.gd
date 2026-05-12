@@ -30,7 +30,7 @@ func set_wave_controller(value: WaveController) -> void:
 
 func _on_spawn_timer_timeout() -> void:
 	_cleanup_enemies()
-	var free_slots := max_active_enemies - active_enemies.size()
+	var free_slots := get_current_max_active_enemies() - active_enemies.size()
 	if free_slots <= 0:
 		return
 
@@ -41,7 +41,7 @@ func _on_spawn_timer_timeout() -> void:
 		spawn_requests.append(&"normal")
 
 	for spawn_kind in spawn_requests:
-		if active_enemies.size() >= max_active_enemies:
+		if active_enemies.size() >= get_current_max_active_enemies():
 			break
 		spawn_enemy(spawn_kind)
 
@@ -104,3 +104,8 @@ func _generate_spawn_position() -> Vector2:
 		clampf(spawn_position.x, GameConstants.ARENA_MIN.x + 24.0, GameConstants.ARENA_MAX.x - 24.0),
 		clampf(spawn_position.y, GameConstants.ARENA_MIN.y + 24.0, GameConstants.ARENA_MAX.y - 24.0)
 	)
+
+func get_current_max_active_enemies() -> int:
+	if wave_controller == null:
+		return max_active_enemies
+	return max_active_enemies + int(floor(float(max(0, wave_controller.current_wave - 1)) / float(GameConstants.ACTIVE_ENEMY_WAVE_STEP)))

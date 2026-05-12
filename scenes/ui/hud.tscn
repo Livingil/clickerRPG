@@ -76,7 +76,7 @@ text = "Echo 0 | Active 0"
 [node name="SchoolValue" type="Label" parent="Root/HeaderBar/HeaderMargin/HeaderContent/BottomRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Fire Lv0 S0/4"
+text = "Fire Lv0 XP 0/10 S0/4"
 
 [node name="PrestigeToggleButton" type="Button" parent="Root/HeaderBar/HeaderMargin/HeaderContent/BottomRow"]
 layout_mode = 2

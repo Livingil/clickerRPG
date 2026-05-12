@@ -28,15 +28,15 @@ func tick(delta: float) -> void:
 	controller.hero.play_skill_cast(&"ember_chain")
 	if chain_target == null:
 		var single_damage := GameState.build_hero_stats().damage * single_target_ratio
-		primary_target.take_school_damage(single_damage, SchoolRules.SCHOOL_FIRE)
+		primary_target.receive_school_hit(single_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
 		_spawn_chain_vfx([
 			controller.hero.global_position,
 			primary_target.global_position,
 		])
 	else:
 		var base_damage := GameState.build_hero_stats().damage * chain_ratio
-		primary_target.take_school_damage(base_damage, SchoolRules.SCHOOL_FIRE)
-		chain_target.take_school_damage(base_damage, SchoolRules.SCHOOL_FIRE)
+		primary_target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
+		chain_target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
 		_spawn_chain_vfx([
 			controller.hero.global_position,
 			primary_target.global_position,

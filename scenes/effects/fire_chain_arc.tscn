@@ -2,8 +2,5 @@
 
 [ext_resource type="Script" path="res://scripts/effects/fire_chain_arc.gd" id="1_lxagq"]
 
-[node name="FireChainArc" type="Line2D"]
+[node name="FireChainArc" type="Node2D"]
 script = ExtResource("1_lxagq")
-width = 8.0
-default_color = Color(1, 0.48, 0.16, 0.95)
-antialiased = true

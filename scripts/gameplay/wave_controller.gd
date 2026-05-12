@@ -44,11 +44,17 @@ func configure_enemy(enemy: Enemy, spawn_kind: StringName) -> void:
 	var hp_multiplier := pow(GameConstants.WAVE_ENEMY_HP_SCALE, current_wave - 1)
 	var speed_multiplier := pow(GameConstants.WAVE_ENEMY_SPEED_SCALE, current_wave - 1)
 	var damage_multiplier := pow(GameConstants.WAVE_ENEMY_DAMAGE_SCALE, current_wave - 1)
+	var defense_multiplier := pow(GameConstants.WAVE_ENEMY_DEFENSE_SCALE, current_wave - 1)
+	var evasion_multiplier := pow(GameConstants.WAVE_ENEMY_EVASION_SCALE, current_wave - 1)
+	var accuracy_multiplier := pow(GameConstants.WAVE_ENEMY_ACCURACY_SCALE, current_wave - 1)
 	var reward_multiplier := pow(GameConstants.WAVE_REWARD_SCALE, current_wave - 1)
 
 	enemy.max_hp *= hp_multiplier
 	enemy.speed *= speed_multiplier
 	enemy.attack_damage *= damage_multiplier
+	enemy.defense *= defense_multiplier
+	enemy.evasion *= evasion_multiplier
+	enemy.accuracy *= accuracy_multiplier
 	enemy.reward_gold = int(round(enemy.reward_gold * reward_multiplier))
 	enemy.reward_essence = int(round(enemy.reward_essence * reward_multiplier))
 

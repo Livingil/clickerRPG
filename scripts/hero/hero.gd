@@ -39,21 +39,29 @@ func _on_attack_performed(target: Enemy, damage: float, is_crit: bool) -> void:
 
 func _on_hero_stats_changed() -> void:
 	stats_component.rebuild_from_game_state()
+	_apply_runtime_stats(false)
 
 func take_damage(amount: float) -> void:
 	if hp <= 0.0:
 		return
 
-	hp = maxf(0.0, hp - amount)
+	var damage_taken := CombatStats.apply_defense(amount, stats_component.get_defense())
+	hp = maxf(0.0, hp - damage_taken)
 	_refresh_health_bar()
 	if hp <= 0.0:
 		die()
 
+func receive_enemy_hit(amount: float, enemy_accuracy: float) -> bool:
+	var hit_chance := CombatStats.compute_hit_chance(enemy_accuracy, stats_component.get_evasion())
+	if randf() > hit_chance:
+		return false
+	take_damage(amount)
+	return true
+
 func reset_for_new_run() -> void:
 	global_position = GameConstants.HERO_START_POSITION
 	stats_component.rebuild_from_game_state()
-	hp = max_hp
-	_refresh_health_bar()
+	_apply_runtime_stats(true)
 
 func die() -> void:
 	died.emit()
@@ -65,6 +73,8 @@ func play_skill_cast(skill_name: StringName) -> void:
 			_play_body_pulse(Color(1.0, 0.55, 0.25, 1.0), 1.14, 0.16)
 		&"cinder_burst":
 			_play_body_pulse(Color(1.0, 0.35, 0.12, 1.0), 1.2, 0.18)
+		&"ash_storm":
+			_play_body_pulse(Color(0.92, 0.32, 0.08, 1.0), 1.26, 0.22)
 		_:
 			_play_body_pulse(Color(0.85, 0.85, 1.0, 1.0), 1.1, 0.12)
 
@@ -84,3 +94,14 @@ func _play_body_pulse(color: Color, scale_amount: float, duration: float) -> voi
 	var tween := create_tween()
 	tween.tween_property(body, "modulate", Color(1, 1, 1, 1), duration)
 	tween.parallel().tween_property(body, "scale", Vector2.ONE, duration)
+
+func _apply_runtime_stats(restore_full_hp: bool) -> void:
+	var previous_hp_ratio := 1.0
+	if max_hp > 0.0:
+		previous_hp_ratio = hp / max_hp
+	max_hp = stats_component.get_max_hp()
+	if restore_full_hp:
+		hp = max_hp
+	else:
+		hp = clampf(max_hp * previous_hp_ratio, 0.0, max_hp)
+	_refresh_health_bar()

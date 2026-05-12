@@ -8,3 +8,15 @@ script = ExtResource("1_gipwp")
 [node name="Body" type="Polygon2D" parent="."]
 color = Color(0.44, 0.72, 1, 1)
 polygon = PackedVector2Array(0, -8, 8, 0, 0, 8, -8, 0)
+
+[node name="Glow" type="Polygon2D" parent="."]
+color = Color(1, 0.6, 0.2, 0.35)
+polygon = PackedVector2Array(0, -13, 13, 0, 0, 13, -13, 0)
+
+[node name="Trail" type="Line2D" parent="."]
+position = Vector2(-6, 0)
+width = 7.0
+default_color = Color(1, 0.45, 0.12, 0.75)
+joint_mode = 1
+begin_cap_mode = 1
+end_cap_mode = 1

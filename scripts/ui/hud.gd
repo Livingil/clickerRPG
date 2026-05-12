@@ -54,6 +54,7 @@ func _ready() -> void:
 	GameState.echo_changed.connect(_refresh_echo)
 	GameState.hero_stats_changed.connect(_refresh_stats)
 	GameState.school_state_changed.connect(_refresh_school_status)
+	GameState.school_mastery_changed.connect(_refresh_school_status)
 	SignalBus.wave_changed.connect(_refresh_wave)
 
 	skills_tab_button.pressed.connect(_on_tab_pressed.bind(TAB_SKILLS))
@@ -95,10 +96,13 @@ func _refresh_hp() -> void:
 
 func _refresh_school_status() -> void:
 	var summary := GameState.get_active_school_summary()
-	school_value_label.text = "%s Lv%d S%d/4" % [
+	var level_xp := int(summary["mastery_xp"]) - int(summary["current_level_floor_xp"])
+	var next_level_xp := int(summary["next_level_xp"]) - int(summary["current_level_floor_xp"])
+	school_value_label.text = "%s Lv%d XP %d/%d" % [
 		summary["name"],
 		summary["mastery_level"],
-		GameState.get_permanent_skill_slot_count(),
+		level_xp,
+		next_level_xp,
 	]
 
 func _on_tab_pressed(tab_id: StringName) -> void:

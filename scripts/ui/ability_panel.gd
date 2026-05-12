@@ -11,17 +11,11 @@ var pending_skill_id: StringName = &""
 
 func _ready() -> void:
 	GameState.school_state_changed.connect(_refresh)
+	GameState.school_mastery_changed.connect(_refresh_mastery_only)
 	_refresh()
 
 func _refresh() -> void:
-	var school_summary := GameState.get_active_school_summary()
-	school_value_label.text = "%s / %s" % [school_summary["name"], school_summary["core_label"]]
-	mastery_value_label.text = "Lv.%d  XP %d / %d" % [
-		school_summary["mastery_level"],
-		school_summary["mastery_xp"],
-		school_summary["next_level_xp"],
-	]
-	slot_value_label.text = "%d / 4 permanent skill slots" % GameState.get_permanent_skill_slot_count()
+	_refresh_header()
 
 	for child in available_buttons.get_children():
 		child.queue_free()
@@ -91,3 +85,16 @@ func _on_slot_pressed(slot_index: int) -> void:
 
 	if GameState.clear_skill_slot(slot_index):
 		_refresh()
+
+func _refresh_mastery_only() -> void:
+	_refresh_header()
+
+func _refresh_header() -> void:
+	var school_summary := GameState.get_active_school_summary()
+	school_value_label.text = "%s / %s" % [school_summary["name"], school_summary["core_label"]]
+	mastery_value_label.text = "Lv.%d  XP %d / %d" % [
+		school_summary["mastery_level"],
+		school_summary["mastery_xp"],
+		school_summary["next_level_xp"],
+	]
+	slot_value_label.text = "%d / 4 permanent skill slots" % GameState.get_permanent_skill_slot_count()

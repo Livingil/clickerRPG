@@ -1,6 +1,8 @@
 extends AbilityBase
 class_name FireCinderBurstAbility
 
+const FireMeteorStrikeEffect = preload("res://scripts/effects/fire_meteor_strike.gd")
+
 var controller: AbilityController
 var cooldown_left: float = 0.0
 var cooldown_duration: float = 5.5
@@ -28,7 +30,7 @@ func tick(delta: float) -> void:
 	var hit_any := false
 	var base_damage := GameState.build_hero_stats().damage * splash_ratio
 
-	target.take_school_damage(base_damage, SchoolRules.SCHOOL_FIRE)
+	target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
 	hit_any = true
 	for enemy in enemies:
 		if not is_instance_valid(enemy):
@@ -41,7 +43,7 @@ func tick(delta: float) -> void:
 			continue
 
 		if enemy_node.global_position.distance_to(target.global_position) <= splash_range:
-			enemy_node.take_school_damage(base_damage, SchoolRules.SCHOOL_FIRE)
+			enemy_node.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
 			hit_any = true
 
 	if hit_any:
@@ -60,6 +62,13 @@ func _find_primary_target() -> Enemy:
 func _spawn_burst_vfx(center_position: Vector2) -> void:
 	if controller == null:
 		return
-	var burst := FireBurstRing.new()
-	burst.setup(center_position, splash_range * 0.35)
+	if not _is_inside_arena(center_position):
+		return
+	var burst := FireMeteorStrikeEffect.new() as FireMeteorStrike
+	if burst == null:
+		return
+	burst.setup(center_position, splash_range * 0.48)
 	controller.spawn_effect(burst)
+
+func _is_inside_arena(world_position: Vector2) -> bool:
+	return world_position.x >= GameConstants.ARENA_MIN.x and world_position.x <= GameConstants.ARENA_MAX.x and world_position.y >= GameConstants.ARENA_MIN.y and world_position.y <= GameConstants.ARENA_MAX.y

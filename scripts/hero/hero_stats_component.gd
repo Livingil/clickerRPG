@@ -9,6 +9,9 @@ func rebuild_from_game_state() -> void:
 func get_damage() -> float:
 	return current_stats.damage
 
+func get_max_hp() -> float:
+	return current_stats.max_hp
+
 func get_attack_speed() -> float:
 	return current_stats.attack_speed
 
@@ -17,3 +20,12 @@ func get_crit_chance() -> float:
 
 func get_crit_multiplier() -> float:
 	return current_stats.crit_multiplier
+
+func get_defense() -> float:
+	return current_stats.defense
+
+func get_evasion() -> float:
+	return current_stats.evasion
+
+func get_accuracy() -> float:
+	return current_stats.accuracy

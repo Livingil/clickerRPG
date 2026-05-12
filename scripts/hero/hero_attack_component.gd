@@ -48,14 +48,14 @@ func _find_target() -> Enemy:
 
 func _spawn_projectile(target: Enemy, damage: float, is_crit: bool) -> void:
 	if battlefield == null or projectile_scene == null:
-		target.take_damage(damage)
+		target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
 		return
 
 	var projectile := projectile_scene.instantiate() as MagicProjectile
 	if projectile == null:
-		target.take_school_damage(damage, GameState.active_school)
+		target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
 		return
 
 	projectile.global_position = attack_point.global_position
-	projectile.setup(target, damage, is_crit, GameState.active_school)
+	projectile.setup(target, damage, is_crit, GameState.active_school, stats_component.get_accuracy())
 	battlefield.projectile_container.add_child(projectile)

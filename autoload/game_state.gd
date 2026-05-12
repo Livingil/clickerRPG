@@ -5,6 +5,7 @@ signal echo_changed(collected_echo: int, active_echo_power: int)
 signal hero_stats_changed
 signal upgrades_changed
 signal school_state_changed
+signal school_mastery_changed
 signal prestige_performed
 
 const UPGRADE_DAMAGE: StringName = &"damage"
@@ -23,9 +24,13 @@ var unlocked_global_skill_ids: Array[StringName] = []
 var equipped_skill_ids: Array[StringName] = []
 
 var bonus_damage: float = 0.0
+var bonus_max_hp: float = 0.0
 var bonus_attack_speed: float = 0.0
 var bonus_crit_chance: float = 0.0
 var bonus_crit_multiplier: float = 0.0
+var bonus_defense: float = 0.0
+var bonus_evasion: float = 0.0
+var bonus_accuracy: float = 0.0
 
 var upgrade_levels: Dictionary = {
 	UPGRADE_DAMAGE: 0,
@@ -39,25 +44,25 @@ var upgrade_definitions: Dictionary = {
 		"name": "Damage",
 		"base_cost": 20,
 		"cost_scale": 1.35,
-		"value_per_level": 4.0,
+		"value_per_level": 1.5,
 	},
 	UPGRADE_ATTACK_SPEED: {
 		"name": "Attack Speed",
 		"base_cost": 25,
 		"cost_scale": 1.4,
-		"value_per_level": 0.12,
+		"value_per_level": 0.04,
 	},
 	UPGRADE_CRIT_CHANCE: {
 		"name": "Crit Chance",
 		"base_cost": 30,
 		"cost_scale": 1.45,
-		"value_per_level": 0.02,
+		"value_per_level": 0.0075,
 	},
 	UPGRADE_CRIT_MULTIPLIER: {
 		"name": "Crit Mult",
 		"base_cost": 40,
 		"cost_scale": 1.5,
-		"value_per_level": 0.15,
+		"value_per_level": 0.05,
 	},
 }
 
@@ -81,10 +86,14 @@ func add_echo(value: int) -> void:
 
 func build_hero_stats() -> CombatStats:
 	var stats := CombatStats.new()
+	stats.max_hp = GameConstants.HERO_BASE_HP + bonus_max_hp + get_active_echo_hp_bonus()
 	stats.damage = GameConstants.HERO_BASE_DAMAGE + bonus_damage + get_active_echo_damage_bonus()
 	stats.attack_speed = GameConstants.HERO_BASE_ATTACK_SPEED + bonus_attack_speed + get_active_echo_attack_speed_bonus()
-	stats.crit_chance = clampf(GameConstants.HERO_BASE_CRIT_CHANCE + bonus_crit_chance, 0.0, 1.0)
-	stats.crit_multiplier = maxf(1.0, GameConstants.HERO_BASE_CRIT_MULTIPLIER + bonus_crit_multiplier)
+	stats.crit_chance = clampf(GameConstants.HERO_BASE_CRIT_CHANCE + bonus_crit_chance + get_active_echo_crit_chance_bonus(), 0.0, 1.0)
+	stats.crit_multiplier = maxf(1.0, GameConstants.HERO_BASE_CRIT_MULTIPLIER + bonus_crit_multiplier + get_active_echo_crit_multiplier_bonus())
+	stats.defense = GameConstants.HERO_BASE_DEFENSE + bonus_defense + get_active_echo_defense_bonus()
+	stats.evasion = GameConstants.HERO_BASE_EVASION + bonus_evasion + get_active_echo_evasion_bonus()
+	stats.accuracy = GameConstants.HERO_BASE_ACCURACY + bonus_accuracy + get_active_echo_accuracy_bonus()
 	return stats
 
 func get_hero_dps() -> float:
@@ -120,8 +129,15 @@ func get_school_core_mastery_level(school_id: StringName) -> int:
 	return SchoolRules.get_core_mastery_level_from_xp(get_school_mastery_xp(school_id))
 
 func add_active_school_mastery_xp(value: int) -> void:
+	var old_core_level := get_school_core_mastery_level(active_school)
+	var old_total_level := get_school_mastery_level(active_school)
 	school_mastery_xp[active_school] = get_school_mastery_xp(active_school) + value
-	_rebuild_school_state()
+	var new_core_level := get_school_core_mastery_level(active_school)
+	var new_total_level := get_school_mastery_level(active_school)
+	if new_core_level != old_core_level or new_total_level != old_total_level:
+		_rebuild_school_state()
+		return
+	school_mastery_changed.emit()
 
 func get_mastery_xp_for_enemy(boss_kind: StringName) -> int:
 	match boss_kind:
@@ -141,6 +157,8 @@ func set_active_school(school_id: StringName) -> void:
 	_rebuild_school_state()
 
 func get_permanent_skill_slot_count() -> int:
+	if GameConstants.DEV_UNLOCK_ALL_SKILLS:
+		return 4
 	return SchoolRules.get_skill_slot_count_for_highest_wave(highest_wave_reached)
 
 func get_available_skill_ids() -> Array[StringName]:
@@ -257,41 +275,66 @@ func activate_collected_echo() -> void:
 	hero_stats_changed.emit()
 
 func get_active_echo_damage_bonus() -> float:
-	return echo_power * 0.3
+	return echo_power * 0.05
+
+func get_active_echo_hp_bonus() -> float:
+	return echo_power * 0.35
 
 func get_active_echo_attack_speed_bonus() -> float:
-	return floor(float(echo_power) / 20.0) * 0.03
+	return floor(float(echo_power) / 40.0) * 0.01
+
+func get_active_echo_crit_chance_bonus() -> float:
+	return floor(float(echo_power) / 80.0) * 0.0025
+
+func get_active_echo_crit_multiplier_bonus() -> float:
+	return floor(float(echo_power) / 100.0) * 0.01
+
+func get_active_echo_defense_bonus() -> float:
+	return echo_power * 0.12
+
+func get_active_echo_evasion_bonus() -> float:
+	return echo_power * 0.05
+
+func get_active_echo_accuracy_bonus() -> float:
+	return echo_power * 0.08
 
 func get_active_echo_bonus_summary() -> String:
-	return "+%.1f dmg  +%.2f atk/s" % [
+	return "+%.0f hp  +%.1f dmg  +%.2f atk/s  +%.1f def  +%.1f eva  +%.1f acc  +%.2f%% crit  +%.2f critx" % [
+		get_active_echo_hp_bonus(),
 		get_active_echo_damage_bonus(),
 		get_active_echo_attack_speed_bonus(),
+		get_active_echo_defense_bonus(),
+		get_active_echo_evasion_bonus(),
+		get_active_echo_accuracy_bonus(),
+		get_active_echo_crit_chance_bonus() * 100.0,
+		get_active_echo_crit_multiplier_bonus(),
 	]
 
 func get_collected_echo_bonus_summary() -> String:
-	return "+%.1f dmg  +%.2f atk/s after death" % [
-		echo_collected * 0.3,
-		floor(float(echo_collected) / 20.0) * 0.03,
+	return "+%.0f hp  +%.1f dmg  +%.2f atk/s  +%.1f def  +%.1f eva  +%.1f acc  +%.2f%% crit  +%.2f critx after death" % [
+		echo_collected * 0.35,
+		echo_collected * 0.05,
+		floor(float(echo_collected) / 40.0) * 0.01,
+		echo_collected * 0.12,
+		echo_collected * 0.05,
+		echo_collected * 0.08,
+		floor(float(echo_collected) / 80.0) * 0.25,
+		floor(float(echo_collected) / 100.0) * 0.01,
 	]
 
 func get_echo_gain_for_enemy(boss_kind: StringName) -> int:
 	match boss_kind:
 		&"wave":
-			return 4
+			return 2
 		&"mini":
-			return 12
+			return 6
 		&"grand":
-			return 24
+			return 12
 		_:
 			return 1
 
 func get_upgrade_ids() -> Array[StringName]:
-	return [
-		UPGRADE_DAMAGE,
-		UPGRADE_ATTACK_SPEED,
-		UPGRADE_CRIT_CHANCE,
-		UPGRADE_CRIT_MULTIPLIER,
-	]
+	return []
 
 func get_upgrade_level(upgrade_id: StringName) -> int:
 	return int(upgrade_levels.get(upgrade_id, 0))
@@ -348,10 +391,14 @@ func _build_upgrade_bonus_text(upgrade_id: StringName) -> String:
 			return ""
 
 func _apply_upgrade_bonuses() -> void:
+	bonus_max_hp = 0.0
 	bonus_damage = get_upgrade_level(UPGRADE_DAMAGE) * float(upgrade_definitions[UPGRADE_DAMAGE]["value_per_level"])
 	bonus_attack_speed = get_upgrade_level(UPGRADE_ATTACK_SPEED) * float(upgrade_definitions[UPGRADE_ATTACK_SPEED]["value_per_level"])
 	bonus_crit_chance = get_upgrade_level(UPGRADE_CRIT_CHANCE) * float(upgrade_definitions[UPGRADE_CRIT_CHANCE]["value_per_level"])
 	bonus_crit_multiplier = get_upgrade_level(UPGRADE_CRIT_MULTIPLIER) * float(upgrade_definitions[UPGRADE_CRIT_MULTIPLIER]["value_per_level"])
+	bonus_defense = 0.0
+	bonus_evasion = 0.0
+	bonus_accuracy = 0.0
 
 func perform_prestige() -> void:
 	gold = 0
@@ -367,6 +414,7 @@ func perform_prestige() -> void:
 	upgrades_changed.emit()
 	prestige_performed.emit()
 	school_state_changed.emit()
+	school_mastery_changed.emit()
 
 func _on_wave_changed(current_wave: int) -> void:
 	if current_wave > highest_wave_reached:
@@ -397,6 +445,8 @@ func _trim_equipped_skills_to_permanent_slots() -> void:
 		equipped_skill_ids.append(&"")
 
 func _is_skill_unlocked_for_active_school(skill_id: StringName) -> bool:
+	if GameConstants.DEV_UNLOCK_ALL_SKILLS:
+		return true
 	var skill_data: Dictionary = SchoolRules.SKILL_DEFINITIONS.get(skill_id, {})
 	var unlock_level := int(skill_data.get("unlock_level", 999))
 	return get_school_core_mastery_level(active_school) >= unlock_level

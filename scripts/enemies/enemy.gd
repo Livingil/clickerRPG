@@ -10,6 +10,9 @@ const DeathBurstScene = preload("res://scenes/effects/death_burst.tscn")
 @export var max_hp: float = GameConstants.ENEMY_BASE_HP
 @export var speed: float = GameConstants.ENEMY_BASE_SPEED
 @export var attack_damage: float = GameConstants.ENEMY_BASE_DAMAGE
+@export var defense: float = GameConstants.ENEMY_BASE_DEFENSE
+@export var evasion: float = GameConstants.ENEMY_BASE_EVASION
+@export var accuracy: float = GameConstants.ENEMY_BASE_ACCURACY
 @export var attack_range: float = GameConstants.ENEMY_ATTACK_RANGE
 @export var attack_cooldown: float = GameConstants.ENEMY_ATTACK_COOLDOWN
 @export var reward_gold: int = GameConstants.ENEMY_REWARD_GOLD
@@ -48,7 +51,8 @@ func set_target(hero: Hero) -> void:
 	hero_target = hero
 
 func take_damage(amount: float) -> void:
-	hp -= amount
+	var damage_taken := CombatStats.apply_defense(amount, defense)
+	hp -= damage_taken
 	_play_hit_feedback()
 	_refresh_health_bar()
 	if hp <= 0.0:
@@ -58,6 +62,13 @@ func take_school_damage(amount: float, school_id: StringName) -> void:
 	var school_damage := amount * get_vulnerability_multiplier(school_id)
 	take_damage(school_damage)
 	apply_vulnerability_stack(school_id)
+
+func receive_school_hit(amount: float, school_id: StringName, attacker_accuracy: float) -> bool:
+	var hit_chance := CombatStats.compute_hit_chance(attacker_accuracy, evasion)
+	if randf() > hit_chance:
+		return false
+	take_school_damage(amount, school_id)
+	return true
 
 func die() -> void:
 	_spawn_death_burst()
@@ -82,7 +93,7 @@ func _tick_attack(delta: float) -> void:
 	if attack_cooldown_left > 0.0:
 		return
 
-	hero_target.take_damage(attack_damage)
+	hero_target.receive_enemy_hit(attack_damage, accuracy)
 	attack_cooldown_left = attack_cooldown
 
 func clamp_to_arena() -> void:
