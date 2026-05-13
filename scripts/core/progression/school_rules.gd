@@ -1,8 +1,8 @@
 extends RefCounted
 class_name SchoolRules
 
-const SLOT_WAVE_UNLOCKS: Array[int] = [0, 20, 30, 50]
-const MASTERY_UNLOCK_LEVELS: Array[int] = [1, 5, 10]
+const SLOT_WAVE_UNLOCKS: Array[int] = [0, 5, 10, 40]
+const MASTERY_UNLOCK_LEVELS: Array[int] = [1, 4, 5]
 const CORE_MASTERY_XP_THRESHOLDS: Array[int] = [20, 200, 1000, 3000, 7000, 15000, 30000, 60000, 120000, 240000]
 const POST_10_XP_PER_LEVEL: int = 120000
 const VULNERABILITY_STACK_BONUS: float = 0.04
@@ -63,20 +63,20 @@ const SCHOOL_DEFINITIONS := {
 
 const SKILL_DEFINITIONS := {
 	&"ember_chain": {"name": "Ember Chain", "school": SCHOOL_FIRE, "unlock_level": 1},
-	&"cinder_burst": {"name": "Cinder Burst", "school": SCHOOL_FIRE, "unlock_level": 5},
-	&"ash_storm": {"name": "Ash Storm", "school": SCHOOL_FIRE, "unlock_level": 10},
+	&"cinder_burst": {"name": "Cinder Burst", "school": SCHOOL_FIRE, "unlock_level": 4},
+	&"ash_storm": {"name": "Ash Storm", "school": SCHOOL_FIRE, "unlock_level": 5},
 	&"frost_orb": {"name": "Frost Orb", "school": SCHOOL_WATER, "unlock_level": 1},
-	&"tidal_pulse": {"name": "Tidal Pulse", "school": SCHOOL_WATER, "unlock_level": 5},
-	&"glacial_field": {"name": "Glacial Field", "school": SCHOOL_WATER, "unlock_level": 10},
+	&"tidal_pulse": {"name": "Tidal Pulse", "school": SCHOOL_WATER, "unlock_level": 4},
+	&"glacial_field": {"name": "Glacial Field", "school": SCHOOL_WATER, "unlock_level": 5},
 	&"stone_spike": {"name": "Stone Spike", "school": SCHOOL_EARTH, "unlock_level": 1},
-	&"quake_ring": {"name": "Quake Ring", "school": SCHOOL_EARTH, "unlock_level": 5},
-	&"bastion_crash": {"name": "Bastion Crash", "school": SCHOOL_EARTH, "unlock_level": 10},
+	&"quake_ring": {"name": "Quake Ring", "school": SCHOOL_EARTH, "unlock_level": 4},
+	&"bastion_crash": {"name": "Bastion Crash", "school": SCHOOL_EARTH, "unlock_level": 5},
 	&"razor_gust": {"name": "Razor Gust", "school": SCHOOL_AIR, "unlock_level": 1},
-	&"cyclone_arc": {"name": "Cyclone Arc", "school": SCHOOL_AIR, "unlock_level": 5},
-	&"sky_flurry": {"name": "Sky Flurry", "school": SCHOOL_AIR, "unlock_level": 10},
+	&"cyclone_arc": {"name": "Cyclone Arc", "school": SCHOOL_AIR, "unlock_level": 4},
+	&"sky_flurry": {"name": "Sky Flurry", "school": SCHOOL_AIR, "unlock_level": 5},
 	&"spark_jump": {"name": "Spark Jump", "school": SCHOOL_LIGHTNING, "unlock_level": 1},
-	&"volt_lance": {"name": "Volt Lance", "school": SCHOOL_LIGHTNING, "unlock_level": 5},
-	&"thunder_crown": {"name": "Thunder Crown", "school": SCHOOL_LIGHTNING, "unlock_level": 10},
+	&"volt_lance": {"name": "Volt Lance", "school": SCHOOL_LIGHTNING, "unlock_level": 4},
+	&"thunder_crown": {"name": "Thunder Crown", "school": SCHOOL_LIGHTNING, "unlock_level": 5},
 }
 
 static func get_core_mastery_level_from_xp(xp: int) -> int:

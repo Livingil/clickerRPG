@@ -2,6 +2,8 @@ extends Node2D
 class_name FireChainArc
 
 const FireBurstRingScene = preload("res://scenes/effects/fire_burst_ring.tscn")
+const KENNEY_SPARK_TEXTURE: Texture2D = preload("res://third_party/kenney-particle-pack/addons/kenney_particle_pack/spark_03.png")
+const KENNEY_SMOKE_TEXTURE: Texture2D = preload("res://third_party/kenney-particle-pack/addons/kenney_particle_pack/smoke_02.png")
 
 class PlasmaOrb:
 	extends Node2D
@@ -108,13 +110,20 @@ func _build_visuals() -> void:
 
 	big_ball = PlasmaOrb.new()
 	big_ball.configure(19.5, Color(1.0, 0.72, 0.3, 0.98), Color(1.0, 0.45, 0.12, 0.36))
+	if not main_path.is_empty():
+		big_ball.global_position = main_path[0]
 	add_child(big_ball)
 
 	if has_bounce:
 		mini_ball = PlasmaOrb.new()
 		mini_ball.configure(10.5, Color(1.0, 0.62, 0.24, 0.95), Color(1.0, 0.48, 0.18, 0.28))
+		if not bounce_path.is_empty():
+			mini_ball.global_position = bounce_path[0]
 		mini_ball.visible = false
 		add_child(mini_ball)
+		_spawn_travel_particles(mini_ball, false)
+
+	_spawn_travel_particles(big_ball, true)
 
 	phase_time = 0.0
 	bounce_time = 0.0
@@ -184,6 +193,7 @@ func _spawn_impact_ring(ring_position: Vector2, radius: float) -> void:
 		return
 	ring.setup(ring_position, radius)
 	add_child(ring)
+	_spawn_impact_particles(ring_position, radius)
 
 func _is_inside_arena(world_position: Vector2) -> bool:
 	return world_position.x >= GameConstants.ARENA_MIN.x and world_position.x <= GameConstants.ARENA_MAX.x and world_position.y >= GameConstants.ARENA_MIN.y and world_position.y <= GameConstants.ARENA_MAX.y
@@ -204,3 +214,55 @@ func _build_tail_gradient(base_color: Color) -> Gradient:
 	])
 	gradient.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
 	return gradient
+
+func _spawn_travel_particles(anchor: Node2D, primary: bool) -> void:
+	if anchor == null:
+		return
+	var p := GPUParticles2D.new()
+	p.amount = 18 if primary else 10
+	p.lifetime = 0.28 if primary else 0.22
+	p.one_shot = false
+	p.emitting = true
+	p.local_coords = false
+	p.texture = KENNEY_SMOKE_TEXTURE
+	p.process_material = _build_particle_material(
+		Color(1.0, 0.56, 0.18, 0.28 if primary else 0.2),
+		Color(0.8, 0.24, 0.12, 0.0),
+		36.0 if primary else 26.0,
+		95.0 if primary else 72.0
+	)
+	anchor.add_child(p)
+
+func _spawn_impact_particles(world_position: Vector2, radius: float) -> void:
+	var sparks := GPUParticles2D.new()
+	sparks.global_position = world_position
+	sparks.amount = 26
+	sparks.lifetime = 0.34
+	sparks.one_shot = true
+	sparks.explosiveness = 1.0
+	sparks.emitting = true
+	sparks.texture = KENNEY_SPARK_TEXTURE
+	sparks.process_material = _build_particle_material(
+		Color(1.0, 0.82, 0.44, 0.95),
+		Color(0.95, 0.24, 0.08, 0.0),
+		radius * 0.7,
+		220.0
+	)
+	add_child(sparks)
+
+func _build_particle_material(start_color: Color, end_color: Color, spread_radius: float, initial_velocity: float) -> ParticleProcessMaterial:
+	var m := ParticleProcessMaterial.new()
+	m.direction = Vector3(0.0, -1.0, 0.0)
+	m.spread = 180.0
+	m.initial_velocity_min = initial_velocity * 0.55
+	m.initial_velocity_max = initial_velocity
+	m.gravity = Vector3(0.0, 180.0, 0.0)
+	m.scale_min = 0.18
+	m.scale_max = 0.42
+	m.color = start_color
+	m.color_ramp = GradientTexture1D.new()
+	m.color_ramp.gradient = Gradient.new()
+	m.color_ramp.gradient.colors = PackedColorArray([start_color, end_color])
+	m.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
+	m.emission_sphere_radius = maxf(3.0, spread_radius * 0.08)
+	return m

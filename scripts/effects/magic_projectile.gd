@@ -12,6 +12,8 @@ var accuracy: float = 0.0
 @onready var body: Polygon2D = $Body
 @onready var glow: Polygon2D = $Glow
 @onready var trail: Line2D = $Trail
+@onready var kenney_core: Sprite2D = $KenneyCore
+@onready var kenney_glow: Sprite2D = $KenneyGlow
 var trail_points: Array[Vector2] = []
 var trail_max_points: int = 8
 
@@ -40,7 +42,10 @@ func _physics_process(delta: float) -> void:
 	var step := speed * delta
 
 	if distance <= step:
-		target.receive_school_hit(damage, school_id, accuracy)
+		if is_crit:
+			target.receive_school_crit_hit(damage, school_id, accuracy)
+		else:
+			target.receive_school_hit(damage, school_id, accuracy)
 		_spawn_hit_flash()
 		queue_free()
 		return
@@ -85,6 +90,12 @@ func _apply_school_visual() -> void:
 			if glow != null:
 				glow.visible = true
 				glow.color = Color(1.0, 0.65, 0.24, 0.35)
+			if kenney_core != null:
+				kenney_core.visible = true
+				kenney_core.modulate = Color(1.0, 0.72, 0.34, 0.92)
+			if kenney_glow != null:
+				kenney_glow.visible = true
+				kenney_glow.modulate = Color(1.0, 0.54, 0.18, 0.45)
 			if trail != null:
 				trail.visible = true
 				trail.width = 7.0 if is_crit else 6.0
@@ -94,6 +105,12 @@ func _apply_school_visual() -> void:
 			if glow != null:
 				glow.visible = true
 				glow.color = Color(0.5, 0.82, 1.0, 0.32)
+			if kenney_core != null:
+				kenney_core.visible = true
+				kenney_core.modulate = Color(0.56, 0.84, 1.0, 0.9)
+			if kenney_glow != null:
+				kenney_glow.visible = true
+				kenney_glow.modulate = Color(0.58, 0.86, 1.0, 0.34)
 			if trail != null:
 				trail.visible = true
 				trail.width = 5.0
@@ -102,12 +119,20 @@ func _apply_school_visual() -> void:
 			body.color = Color(0.63, 0.5, 0.34, 1.0)
 			if glow != null:
 				glow.visible = false
+			if kenney_core != null:
+				kenney_core.visible = false
+			if kenney_glow != null:
+				kenney_glow.visible = false
 			if trail != null:
 				trail.visible = false
 		&"air":
 			body.color = Color(0.84, 0.9, 1.0, 1.0)
 			if glow != null:
 				glow.visible = false
+			if kenney_core != null:
+				kenney_core.visible = false
+			if kenney_glow != null:
+				kenney_glow.visible = false
 			if trail != null:
 				trail.visible = false
 		&"lightning":
@@ -115,6 +140,12 @@ func _apply_school_visual() -> void:
 			if glow != null:
 				glow.visible = true
 				glow.color = Color(1.0, 0.95, 0.45, 0.38)
+			if kenney_core != null:
+				kenney_core.visible = true
+				kenney_core.modulate = Color(1.0, 0.95, 0.5, 0.95)
+			if kenney_glow != null:
+				kenney_glow.visible = true
+				kenney_glow.modulate = Color(1.0, 0.98, 0.62, 0.42)
 			if trail != null:
 				trail.visible = true
 				trail.width = 4.0

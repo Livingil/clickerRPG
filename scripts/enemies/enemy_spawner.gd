@@ -5,6 +5,7 @@ class_name EnemySpawner
 @export var wave_boss_scene: PackedScene
 @export var mini_boss_scene: PackedScene
 @export var grand_boss_scene: PackedScene
+@export var apex_boss_scene: PackedScene
 @export var max_active_enemies: int = GameConstants.MAX_ACTIVE_ENEMIES
 
 @onready var spawn_timer: Timer = $SpawnTimer
@@ -54,6 +55,8 @@ func spawn_enemy(spawn_kind: StringName = &"normal") -> void:
 			scene_to_spawn = mini_boss_scene
 		&"grand_boss":
 			scene_to_spawn = grand_boss_scene
+		&"apex_boss":
+			scene_to_spawn = apex_boss_scene
 	if scene_to_spawn == null:
 		return
 	if battlefield == null:

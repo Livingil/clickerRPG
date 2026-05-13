@@ -7,8 +7,11 @@ class_name GameplayRoot
 @onready var ability_controller: AbilityController = $AbilityController
 @onready var wave_controller: WaveController = $WaveController
 
+var run_time_sec: float = 0.0
+
 func _ready() -> void:
 	randomize()
+	set_process(true)
 	hero.attack_performed.connect(ability_controller.handle_hero_attack)
 	hero.attack_performed.connect(_on_hero_attack_performed)
 	hero.died.connect(_on_hero_died)
@@ -16,6 +19,10 @@ func _ready() -> void:
 	enemy_spawner.set_hero(hero)
 	enemy_spawner.set_battlefield(battlefield)
 	wave_controller.bind_spawner(enemy_spawner)
+	run_time_sec = 0.0
+
+func _process(delta: float) -> void:
+	run_time_sec += delta
 
 func _unhandled_input(event: InputEvent) -> void:
 	if hero == null:
@@ -45,10 +52,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 func _on_hero_died() -> void:
+	GameState.register_run_death(run_time_sec)
 	GameState.activate_collected_echo()
 	enemy_spawner.clear_active_enemies()
 	wave_controller.reset_to_first_wave()
 	hero.reset_for_new_run()
+	run_time_sec = 0.0
 
 func _on_hero_attack_performed(_target: Enemy, _damage: float, _is_crit: bool) -> void:
 	GameState.add_active_school_mastery_xp(1)

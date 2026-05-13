@@ -28,29 +28,32 @@ func tick(delta: float) -> void:
 
 	var enemies := controller.get_tree().get_nodes_in_group("enemies")
 	var hit_any := false
-	var base_damage := GameState.build_hero_stats().damage * splash_ratio
+	var skill_damage_mult := GameState.get_skill_damage_multiplier(&"cinder_burst")
+	var skill_cd_mult := GameState.get_skill_cooldown_multiplier(&"cinder_burst")
+	var repeat_count := 2 if GameState.should_trigger_repeat_action() else 1
+	var base_damage := GameState.build_hero_stats().damage * splash_ratio * skill_damage_mult * GameState.get_skill_proc_multiplier(&"cinder_burst")
+	for _i in range(repeat_count):
+		target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
+		hit_any = true
+		for enemy in enemies:
+			if not is_instance_valid(enemy):
+				continue
+			if enemy is not Enemy:
+				continue
 
-	target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
-	hit_any = true
-	for enemy in enemies:
-		if not is_instance_valid(enemy):
-			continue
-		if enemy is not Enemy:
-			continue
+			var enemy_node := enemy as Enemy
+			if enemy_node == target:
+				continue
 
-		var enemy_node := enemy as Enemy
-		if enemy_node == target:
-			continue
-
-		if enemy_node.global_position.distance_to(target.global_position) <= splash_range:
-			enemy_node.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
-			hit_any = true
+			if enemy_node.global_position.distance_to(target.global_position) <= splash_range:
+				enemy_node.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
+				hit_any = true
 
 	if hit_any:
 		controller.hero.play_skill_cast(&"cinder_burst")
 		_spawn_burst_vfx(target.global_position)
 		GameState.add_active_school_mastery_xp(3)
-		cooldown_left = cooldown_duration
+		cooldown_left = cooldown_duration * skill_cd_mult
 
 func get_display_name() -> String:
 	return "Cinder Burst"

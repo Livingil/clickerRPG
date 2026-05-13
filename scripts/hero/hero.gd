@@ -47,15 +47,29 @@ func take_damage(amount: float) -> void:
 
 	var damage_taken := CombatStats.apply_defense(amount, stats_component.get_defense())
 	hp = maxf(0.0, hp - damage_taken)
+	if GameState.show_hero_damage_text:
+		_spawn_combat_text(str(int(round(damage_taken))), Color(1.0, 0.55, 0.55, 1.0), 1.0)
 	_refresh_health_bar()
 	if hp <= 0.0:
 		die()
 
-func receive_enemy_hit(amount: float, enemy_accuracy: float) -> bool:
+func receive_enemy_hit(amount: float, enemy_accuracy: float, attacker: Enemy = null) -> bool:
+	if GameState.should_block_incoming_hit():
+		if GameState.show_hero_miss_text:
+			_spawn_combat_text("BLOCK", Color(0.75, 1.0, 0.8, 1.0), 0.95)
+		return false
 	var hit_chance := CombatStats.compute_hit_chance(enemy_accuracy, stats_component.get_evasion())
 	if randf() > hit_chance:
+		if GameState.show_hero_miss_text:
+			_spawn_combat_text("MISS", Color(0.82, 0.95, 1.0, 1.0), 0.95)
 		return false
+	var hp_before := hp
 	take_damage(amount)
+	GameState.on_hero_damaged(self, attacker, maxf(0.0, hp_before - hp))
+	if GameState.get_runtime_attack_speed_multiplier() > 1.0:
+		_spawn_combat_text("HASTE", Color(0.8, 1.0, 0.7, 1.0), 0.85)
+	if GameState.get_clone_attack_multiplier() > 0.0:
+		_spawn_combat_text("CLONE", Color(0.72, 0.72, 1.0, 1.0), 0.85)
 	return true
 
 func reset_for_new_run() -> void:
@@ -105,3 +119,18 @@ func _apply_runtime_stats(restore_full_hp: bool) -> void:
 	else:
 		hp = clampf(max_hp * previous_hp_ratio, 0.0, max_hp)
 	_refresh_health_bar()
+
+func _spawn_combat_text(text: String, color: Color, scale_value: float) -> void:
+	var label := Label.new()
+	label.text = text
+	label.modulate = color
+	label.z_index = 100
+	label.scale = Vector2.ONE * scale_value
+	label.position = Vector2(-20.0, -52.0)
+	add_child(label)
+
+	var jitter := Vector2(randf_range(-12.0, 12.0), randf_range(-4.0, 4.0))
+	var tween := create_tween()
+	tween.tween_property(label, "position", label.position + Vector2(0.0, -24.0) + jitter, 0.32)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.32)
+	tween.finished.connect(label.queue_free)

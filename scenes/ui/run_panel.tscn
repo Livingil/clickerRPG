@@ -20,12 +20,247 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Content" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="Margin/Content"]
 layout_mode = 2
 text = "Run"
 
-[node name="Rows" type="VBoxContainer" parent="Margin/Content"]
+[node name="Scroll" type="ScrollContainer" parent="Margin/Content"]
 layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="Margin/Content/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
+
+[node name="OverviewSection" type="VBoxContainer" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OverviewHeader" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection"]
+layout_mode = 2
+text = "Overview"
+
+[node name="OverviewGrid" type="GridContainer" parent="Margin/Content/Scroll/Body/OverviewSection"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 2
+
+[node name="WaveKey" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "Wave Record"
+
+[node name="WaveValue" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "1"
+
+[node name="CurrentDpsKey" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "Current DPS"
+
+[node name="CurrentDpsValue" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "0.0"
+
+[node name="CollectedKey" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "Echo Collected"
+
+[node name="CollectedValue" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "0"
+
+[node name="ActiveKey" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "Echo Active"
+
+[node name="ActiveValue" type="Label" parent="Margin/Content/Scroll/Body/OverviewSection/OverviewGrid"]
+layout_mode = 2
+text = "0"
+
+[node name="Sep1" type="HSeparator" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+
+[node name="EchoSection" type="VBoxContainer" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="EchoHeader" type="Label" parent="Margin/Content/Scroll/Body/EchoSection"]
+layout_mode = 2
+text = "Echo"
+
+[node name="ActiveBonusTitle" type="Label" parent="Margin/Content/Scroll/Body/EchoSection"]
+layout_mode = 2
+text = "Active Bonus"
+
+[node name="ActiveBonusGrid" type="GridContainer" parent="Margin/Content/Scroll/Body/EchoSection"]
+layout_mode = 2
+columns = 4
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 2
+
+[node name="ActiveHp" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "HP +0"
+
+[node name="ActiveDmg" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "DMG +0.0"
+
+[node name="ActiveAtk" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "ATK +0.00"
+
+[node name="ActiveDef" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "DEF +0.0"
+
+[node name="ActiveEva" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "EVA +0.0"
+
+[node name="ActiveAcc" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "ACC +0.0"
+
+[node name="ActiveCrit" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "CRIT +0.00%"
+
+[node name="ActiveCritX" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/ActiveBonusGrid"]
+layout_mode = 2
+text = "CRITx +0.00"
+
+[node name="AfterDeathBonusTitle" type="Label" parent="Margin/Content/Scroll/Body/EchoSection"]
+layout_mode = 2
+text = "After Death Bonus"
+
+[node name="AfterDeathBonusGrid" type="GridContainer" parent="Margin/Content/Scroll/Body/EchoSection"]
+layout_mode = 2
+columns = 4
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 2
+
+[node name="AfterHp" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "HP +0"
+
+[node name="AfterDmg" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "DMG +0.0"
+
+[node name="AfterAtk" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "ATK +0.00"
+
+[node name="AfterDef" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "DEF +0.0"
+
+[node name="AfterEva" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "EVA +0.0"
+
+[node name="AfterAcc" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "ACC +0.0"
+
+[node name="AfterCrit" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "CRIT +0.00%"
+
+[node name="AfterCritX" type="Label" parent="Margin/Content/Scroll/Body/EchoSection/AfterDeathBonusGrid"]
+layout_mode = 2
+text = "CRITx +0.00"
+
+[node name="Sep2" type="HSeparator" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+
+[node name="StatsSection" type="VBoxContainer" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="StatsHeader" type="Label" parent="Margin/Content/Scroll/Body/StatsSection"]
+layout_mode = 2
+text = "Hero Stats (Current Run)"
+
+[node name="StatsGrid" type="GridContainer" parent="Margin/Content/Scroll/Body/StatsSection"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 4
+
+[node name="DamageKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Damage"
+
+[node name="DamageValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0"
+
+[node name="AttackSpeedKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Attack Speed"
+
+[node name="AttackSpeedValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0.00"
+
+[node name="DpsKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "DPS"
+
+[node name="DpsValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0.0"
+
+[node name="HpKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Max HP"
+
+[node name="HpValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0"
+
+[node name="CritChanceKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Crit Chance"
+
+[node name="CritChanceValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0.00%"
+
+[node name="CritMultKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Crit Mult"
+
+[node name="CritMultValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0.00x"
+
+[node name="DefenseKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Defense"
+
+[node name="DefenseValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0.0"
+
+[node name="EvasionKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Evasion"
+
+[node name="EvasionValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0.0"
+
+[node name="AccuracyKey" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "Accuracy"
+
+[node name="AccuracyValue" type="Label" parent="Margin/Content/Scroll/Body/StatsSection/StatsGrid"]
+layout_mode = 2
+text = "0.0"

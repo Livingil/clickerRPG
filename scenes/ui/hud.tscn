@@ -24,6 +24,48 @@ anchor_right = 1.0
 offset_bottom = 100.0
 grow_horizontal = 2
 
+[node name="ChallengeTimerLayer" type="Control" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 100.0
+offset_bottom = 136.0
+grow_horizontal = 2
+
+[node name="TimerBar" type="ProgressBar" parent="Root/ChallengeTimerLayer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 12.0
+grow_horizontal = 2
+show_percentage = false
+value = 100.0
+
+[node name="TimerLabel" type="Label" parent="Root/ChallengeTimerLayer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 14.0
+offset_bottom = 36.0
+grow_horizontal = 2
+horizontal_alignment = 1
+text = "30с"
+
+[node name="RetryBossButton" type="Button" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -120.0
+offset_top = 106.0
+offset_right = 120.0
+offset_bottom = 138.0
+text = "Вызвать босса"
+
 [node name="HeaderMargin" type="MarginContainer" parent="Root/HeaderBar"]
 layout_mode = 2
 theme_override_constants/margin_left = 12
@@ -58,6 +100,12 @@ text = "Wave 1"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "DPS 0.0"
+
+[node name="SettingsButton" type="Button" parent="Root/HeaderBar/HeaderMargin/HeaderContent/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(92, 0)
+text = "Settings"
+toggle_mode = true
 
 [node name="BottomRow" type="HBoxContainer" parent="Root/HeaderBar/HeaderMargin/HeaderContent"]
 layout_mode = 2
@@ -185,3 +233,142 @@ offset_left = -180.0
 offset_top = -180.0
 offset_right = 180.0
 offset_bottom = 40.0
+
+[node name="SettingsPopup" type="PanelContainer" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -120.0
+offset_right = 180.0
+offset_bottom = 220.0
+
+[node name="Margin" type="MarginContainer" parent="Root/SettingsPopup"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="Root/SettingsPopup/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+text = "Combat Text"
+
+[node name="LanguageRow" type="HBoxContainer" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LanguageLabel" type="Label" parent="Root/SettingsPopup/Margin/Content/LanguageRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Language"
+
+[node name="LanguageOption" type="OptionButton" parent="Root/SettingsPopup/Margin/Content/LanguageRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DamageToggle" type="CheckButton" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+text = "Show Damage"
+button_pressed = true
+
+[node name="CritToggle" type="CheckButton" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+text = "Show Crit"
+button_pressed = true
+
+[node name="MissToggle" type="CheckButton" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+text = "Show Miss"
+button_pressed = true
+
+[node name="HeroDamageToggle" type="CheckButton" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+text = "Show Hero Damage"
+button_pressed = true
+
+[node name="HeroMissToggle" type="CheckButton" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+text = "Show Hero Miss"
+button_pressed = true
+
+[node name="Summary" type="Label" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Enemy: Damage ON | Crit ON | Miss ON\nHero: Damage ON | Miss ON"
+
+[node name="SimButton" type="Button" parent="Root/SettingsPopup/Margin/Content"]
+layout_mode = 2
+text = "Run Balance Sim"
+
+[node name="SimScroll" type="ScrollContainer" parent="Root/SettingsPopup/Margin/Content"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+visible = false
+
+[node name="SimResult" type="Label" parent="Root/SettingsPopup/Margin/Content/SimScroll"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Simulation result will appear here."
+
+[node name="SimReportPopup" type="PanelContainer" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/SimReportPopup"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="Content" type="VBoxContainer" parent="Root/SimReportPopup/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HBoxContainer" parent="Root/SimReportPopup/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Root/SimReportPopup/Margin/Content/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Balance Simulation Report"
+
+[node name="CloseButton" type="Button" parent="Root/SimReportPopup/Margin/Content/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+text = "Close"
+
+[node name="ReportScroll" type="ScrollContainer" parent="Root/SimReportPopup/Margin/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 1
+
+[node name="ReportRichText" type="RichTextLabel" parent="Root/SimReportPopup/Margin/Content/ReportScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "Run simulation to see report."

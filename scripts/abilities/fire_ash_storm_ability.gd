@@ -10,7 +10,7 @@ var cast_range: float = 480.0
 var cone_range: float = 250.0
 var cone_half_angle_deg: float = 34.0
 var storm_ratio: float = 1.25
-var knockback_distance: float = 58.0
+var cone_edge_padding: float = 4.0
 
 func _init(owner_controller: AbilityController) -> void:
 	controller = owner_controller
@@ -35,28 +35,32 @@ func tick(delta: float) -> void:
 
 	var enemies := controller.get_tree().get_nodes_in_group("enemies")
 	var hit_count := 0
-	var storm_damage := GameState.build_hero_stats().damage * storm_ratio
+	var skill_damage_mult := GameState.get_skill_damage_multiplier(&"ash_storm")
+	var skill_cd_mult := GameState.get_skill_cooldown_multiplier(&"ash_storm")
+	var storm_damage := GameState.build_hero_stats().damage * storm_ratio * skill_damage_mult * GameState.get_skill_proc_multiplier(&"ash_storm")
 	var cone_dot_threshold := cos(deg_to_rad(cone_half_angle_deg))
+	var repeat_count := 2 if GameState.should_trigger_repeat_action() else 1
 
-	for enemy in enemies:
-		if not is_instance_valid(enemy):
-			continue
-		if enemy is not Enemy:
-			continue
+	for _i in range(repeat_count):
+		for enemy in enemies:
+			if not is_instance_valid(enemy):
+				continue
+			if enemy is not Enemy:
+				continue
 
-		var enemy_node := enemy as Enemy
-		var to_enemy := enemy_node.global_position - hero_position
-		var distance := to_enemy.length()
-		if distance <= 0.001 or distance > cone_range:
-			continue
-		var dir_to_enemy := to_enemy / distance
-		if dir_to_enemy.dot(aim_direction) < cone_dot_threshold:
-			continue
+			var enemy_node := enemy as Enemy
+			var to_enemy := enemy_node.global_position - hero_position
+			var distance := to_enemy.length()
+			if distance <= 0.001 or distance > cone_range:
+				continue
+			var dir_to_enemy := to_enemy / distance
+			if dir_to_enemy.dot(aim_direction) < cone_dot_threshold:
+				continue
 
-		var hit := enemy_node.receive_school_hit(storm_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
-		if hit:
-			_apply_knockback(enemy_node, dir_to_enemy)
-			hit_count += 1
+			var hit := enemy_node.receive_school_hit(storm_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
+			if hit:
+				_apply_knockback_to_cone_edge(enemy_node, hero_position, dir_to_enemy)
+				hit_count += 1
 
 	if hit_count <= 0:
 		return
@@ -64,7 +68,7 @@ func tick(delta: float) -> void:
 	controller.hero.play_skill_cast(&"ash_storm")
 	_spawn_storm_vfx(hero_position, aim_direction)
 	GameState.add_active_school_mastery_xp(5)
-	cooldown_left = cooldown_duration
+	cooldown_left = cooldown_duration * skill_cd_mult
 
 func get_display_name() -> String:
 	return "Ash Storm"
@@ -80,8 +84,9 @@ func _spawn_storm_vfx(origin_position: Vector2, aim_direction: Vector2) -> void:
 	storm.setup(origin_position, aim_direction, cone_range, cone_half_angle_deg)
 	controller.spawn_effect(storm)
 
-func _apply_knockback(enemy: Enemy, direction: Vector2) -> void:
+func _apply_knockback_to_cone_edge(enemy: Enemy, hero_position: Vector2, direction: Vector2) -> void:
 	if enemy == null:
 		return
-	enemy.global_position += direction * knockback_distance
+	var target_radius := maxf(0.0, cone_range - enemy.body_radius - cone_edge_padding)
+	enemy.global_position = hero_position + direction * target_radius
 	enemy.clamp_to_arena()

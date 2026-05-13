@@ -24,16 +24,23 @@ func tick(delta: float) -> void:
 		return
 
 	_perform_attack(target)
-	attack_cooldown = 1.0 / maxf(0.05, stats_component.get_attack_speed())
+	var clone_scale := GameState.get_clone_attack_multiplier()
+	if clone_scale > 0.0:
+		_perform_attack(target, clone_scale)
+	if GameState.should_trigger_repeat_action():
+		_perform_attack(target)
+	attack_cooldown = 1.0 / maxf(0.05, stats_component.get_attack_speed() * GameState.get_runtime_attack_speed_multiplier())
 
 func set_battlefield(value: Battlefield) -> void:
 	battlefield = value
 
-func _perform_attack(target: Enemy) -> void:
+func _perform_attack(target: Enemy, extra_scale: float = 0.0) -> void:
 	var is_crit := randf() < stats_component.get_crit_chance()
 	var damage := stats_component.get_damage()
 	if is_crit:
 		damage *= stats_component.get_crit_multiplier()
+	if extra_scale > 0.0:
+		damage *= (1.0 + extra_scale)
 
 	_spawn_projectile(target, damage, is_crit)
 	attack_performed.emit(target, damage, is_crit)
@@ -48,12 +55,18 @@ func _find_target() -> Enemy:
 
 func _spawn_projectile(target: Enemy, damage: float, is_crit: bool) -> void:
 	if battlefield == null or projectile_scene == null:
-		target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
+		if is_crit:
+			target.receive_school_crit_hit(damage, GameState.active_school, stats_component.get_accuracy())
+		else:
+			target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
 		return
 
 	var projectile := projectile_scene.instantiate() as MagicProjectile
 	if projectile == null:
-		target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
+		if is_crit:
+			target.receive_school_crit_hit(damage, GameState.active_school, stats_component.get_accuracy())
+		else:
+			target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
 		return
 
 	projectile.global_position = attack_point.global_position

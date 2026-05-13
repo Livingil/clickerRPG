@@ -22,11 +22,15 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Content" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="Margin/Content"]
 layout_mode = 2
 text = "Abilities"
+
+[node name="SchoolTabs" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="SchoolValue" type="Label" parent="Margin/Content"]
 layout_mode = 2
@@ -38,15 +42,37 @@ layout_mode = 2
 text = "Lv.0  XP 0"
 autowrap_mode = 3
 
-[node name="SlotValue" type="Label" parent="Margin/Content"]
+[node name="CurrentBonusValue" type="Label" parent="Margin/Content"]
 layout_mode = 2
-text = "0 / 4 permanent skill slots"
+text = "Current bonus"
 autowrap_mode = 3
 
-[node name="AvailableButtons" type="VBoxContainer" parent="Margin/Content"]
+[node name="NextUnlockValue" type="Label" parent="Margin/Content"]
 layout_mode = 2
+text = "Next unlock"
+autowrap_mode = 3
+
+[node name="Scroll" type="ScrollContainer" parent="Margin/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="Margin/Content/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 6
+
+[node name="AvailableHeader" type="Label" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+text = "Available"
+
+[node name="AvailableButtons" type="VBoxContainer" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SlotsHeader" type="Label" parent="Margin/Content"]
+layout_mode = 2
+text = "Slots"
 
 [node name="SkillRows" type="VBoxContainer" parent="Margin/Content"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4

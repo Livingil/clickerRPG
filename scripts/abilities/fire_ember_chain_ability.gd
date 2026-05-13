@@ -26,24 +26,28 @@ func tick(delta: float) -> void:
 		return
 	var chain_target := _find_chain_target(primary_target)
 	controller.hero.play_skill_cast(&"ember_chain")
-	if chain_target == null:
-		var single_damage := GameState.build_hero_stats().damage * single_target_ratio
-		primary_target.receive_school_hit(single_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
-		_spawn_chain_vfx([
-			controller.hero.global_position,
-			primary_target.global_position,
-		])
-	else:
-		var base_damage := GameState.build_hero_stats().damage * chain_ratio
-		primary_target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
-		chain_target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
-		_spawn_chain_vfx([
-			controller.hero.global_position,
-			primary_target.global_position,
-			chain_target.global_position,
-		])
+	var skill_damage_mult := GameState.get_skill_damage_multiplier(&"ember_chain")
+	var skill_cd_mult := GameState.get_skill_cooldown_multiplier(&"ember_chain")
+	var repeat_count := 2 if GameState.should_trigger_repeat_action() else 1
+	for _i in range(repeat_count):
+		if chain_target == null:
+			var single_damage := GameState.build_hero_stats().damage * single_target_ratio * skill_damage_mult * GameState.get_skill_proc_multiplier(&"ember_chain")
+			primary_target.receive_school_hit(single_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
+			_spawn_chain_vfx([
+				controller.hero.global_position,
+				primary_target.global_position,
+			])
+		else:
+			var base_damage := GameState.build_hero_stats().damage * chain_ratio * skill_damage_mult * GameState.get_skill_proc_multiplier(&"ember_chain")
+			primary_target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
+			chain_target.receive_school_hit(base_damage, SchoolRules.SCHOOL_FIRE, controller.hero.stats_component.get_accuracy())
+			_spawn_chain_vfx([
+				controller.hero.global_position,
+				primary_target.global_position,
+				chain_target.global_position,
+			])
 	GameState.add_active_school_mastery_xp(3)
-	cooldown_left = cooldown_duration
+	cooldown_left = cooldown_duration * skill_cd_mult
 
 func get_display_name() -> String:
 	return "Ember Chain"
