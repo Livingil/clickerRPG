@@ -1,0 +1,14 @@
+﻿# Godot generated/cache
+.godot/
+
+# Local helper/debug scripts
+.codex_*.gd
+.codex_*.gd.uid
+
+# OS/editor
+.DS_Store
+Thumbs.db
+
+# Keep third-party folder contents as regular files only; ignore nested VCS metadata if present
+third_party/**/.git
+third_party/kenney-particle-pack/
