@@ -35,14 +35,10 @@ func set_battlefield(value: Battlefield) -> void:
 	battlefield = value
 
 func _perform_attack(target: Enemy, extra_scale: float = 0.0) -> void:
-	var is_crit := randf() < stats_component.get_crit_chance()
-	var damage := stats_component.get_damage()
-	if is_crit:
-		damage *= stats_component.get_crit_multiplier()
-	if extra_scale > 0.0:
-		damage *= (1.0 + extra_scale)
-
-	_spawn_projectile(target, damage, is_crit)
+	var result := await _resolve_hero_attack(target, extra_scale)
+	var damage := float(result.get("schoolDamage", 0.0))
+	var is_crit := bool(result.get("isCrit", false))
+	_spawn_projectile(target, result)
 	attack_performed.emit(target, damage, is_crit)
 
 func _find_target() -> Enemy:
@@ -53,22 +49,24 @@ func _find_target() -> Enemy:
 		GameConstants.HERO_ATTACK_RANGE
 	) as Enemy
 
-func _spawn_projectile(target: Enemy, damage: float, is_crit: bool) -> void:
+func _spawn_projectile(target: Enemy, attack_result: Dictionary) -> void:
+	var is_crit := bool(attack_result.get("isCrit", false))
 	if battlefield == null or projectile_scene == null:
-		if is_crit:
-			target.receive_school_crit_hit(damage, GameState.active_school, stats_component.get_accuracy())
-		else:
-			target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
+		var hit := target.receive_resolved_school_hit(attack_result, GameState.active_school, stats_component.get_accuracy())
+		if hit:
+			GameState.add_active_school_mastery_xp(1)
 		return
 
 	var projectile := projectile_scene.instantiate() as MagicProjectile
 	if projectile == null:
-		if is_crit:
-			target.receive_school_crit_hit(damage, GameState.active_school, stats_component.get_accuracy())
-		else:
-			target.receive_school_hit(damage, GameState.active_school, stats_component.get_accuracy())
+		var hit := target.receive_resolved_school_hit(attack_result, GameState.active_school, stats_component.get_accuracy())
+		if hit:
+			GameState.add_active_school_mastery_xp(1)
 		return
 
 	projectile.global_position = attack_point.global_position
-	projectile.setup(target, damage, is_crit, GameState.active_school, stats_component.get_accuracy())
+	projectile.setup(target, attack_result, GameState.active_school, stats_component.get_accuracy())
 	battlefield.projectile_container.add_child(projectile)
+
+func _resolve_hero_attack(target: Enemy, extra_scale: float) -> Dictionary:
+	return await CombatResolver.resolve_hero_attack(stats_component, target, GameState.active_school, extra_scale)

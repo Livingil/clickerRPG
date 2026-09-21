@@ -6,7 +6,7 @@ signal died
 
 @onready var stats_component: HeroStatsComponent = $StatsComponent
 @onready var attack_component: HeroAttackComponent = $AttackComponent
-@onready var movement_component: Node = $MovementComponent
+@onready var movement_component: HeroMovementComponent = $MovementComponent
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var health_bar: ProgressBar = $HealthBar
 @onready var body: Polygon2D = $Body
@@ -14,6 +14,11 @@ signal died
 var max_hp: float = GameConstants.HERO_BASE_HP
 var hp: float = GameConstants.HERO_BASE_HP
 var body_radius: float = 24.0
+var is_dead: bool = false
+var regen_text_accumulator: float = 0.0
+var regen_text_timer: float = 0.0
+var bastion_time_left: float = 0.0
+var bastion_defense_bonus: float = 0.0
 
 func _ready() -> void:
 	reset_for_new_run()
@@ -22,7 +27,10 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if hp <= 0.0:
+		die()
 		return
+	_tick_hp_regen(delta)
+	_tick_bastion(delta)
 	movement_component.tick(delta)
 	attack_component.tick(delta)
 
@@ -42,10 +50,10 @@ func _on_hero_stats_changed() -> void:
 	_apply_runtime_stats(false)
 
 func take_damage(amount: float) -> void:
-	if hp <= 0.0:
+	if is_dead:
 		return
 
-	var damage_taken := CombatStats.apply_defense(amount, stats_component.get_defense())
+	var damage_taken := CombatStats.apply_defense(amount, get_effective_defense())
 	hp = maxf(0.0, hp - damage_taken)
 	if GameState.show_hero_damage_text:
 		_spawn_combat_text(str(int(round(damage_taken))), Color(1.0, 0.55, 0.55, 1.0), 1.0)
@@ -64,7 +72,11 @@ func receive_enemy_hit(amount: float, enemy_accuracy: float, attacker: Enemy = n
 			_spawn_combat_text("MISS", Color(0.82, 0.95, 1.0, 1.0), 0.95)
 		return false
 	var hp_before := hp
+	if attacker != null and attacker.is_boss:
+		amount *= GameState.get_boss_incoming_damage_multiplier()
 	take_damage(amount)
+	if is_dead:
+		return true
 	GameState.on_hero_damaged(self, attacker, maxf(0.0, hp_before - hp))
 	if GameState.get_runtime_attack_speed_multiplier() > 1.0:
 		_spawn_combat_text("HASTE", Color(0.8, 1.0, 0.7, 1.0), 0.85)
@@ -72,12 +84,107 @@ func receive_enemy_hit(amount: float, enemy_accuracy: float, attacker: Enemy = n
 		_spawn_combat_text("CLONE", Color(0.72, 0.72, 1.0, 1.0), 0.85)
 	return true
 
+func receive_resolved_enemy_hit(attack_result: Dictionary, attacker: Enemy = null) -> bool:
+	if bool(attack_result.get("blocked", false)):
+		if GameState.show_hero_miss_text:
+			_spawn_combat_text("BLOCK", Color(0.75, 1.0, 0.8, 1.0), 0.95)
+		return false
+	if not bool(attack_result.get("hit", false)):
+		if GameState.show_hero_miss_text:
+			_spawn_combat_text("MISS", Color(0.82, 0.95, 1.0, 1.0), 0.95)
+		return false
+	var hp_before := hp
+	var damage_taken := float(attack_result.get("damageTaken", 0.0))
+	take_resolved_damage(damage_taken)
+	if is_dead:
+		return true
+	GameState.on_hero_damaged(self, attacker, maxf(0.0, hp_before - hp))
+	if GameState.get_runtime_attack_speed_multiplier() > 1.0:
+		_spawn_combat_text("HASTE", Color(0.8, 1.0, 0.7, 1.0), 0.85)
+	if GameState.get_clone_attack_multiplier() > 0.0:
+		_spawn_combat_text("CLONE", Color(0.72, 0.72, 1.0, 1.0), 0.85)
+	return true
+
+func take_resolved_damage(damage_taken: float) -> void:
+	if is_dead:
+		return
+	hp = maxf(0.0, hp - maxf(0.0, damage_taken))
+	if GameState.show_hero_damage_text:
+		_spawn_combat_text(str(int(round(damage_taken))), Color(1.0, 0.55, 0.55, 1.0), 1.0)
+	_refresh_health_bar()
+	if hp <= 0.0:
+		die()
+
 func reset_for_new_run() -> void:
+	is_dead = false
+	regen_text_accumulator = 0.0
+	regen_text_timer = 0.0
 	global_position = GameConstants.HERO_START_POSITION
 	stats_component.rebuild_from_game_state()
 	_apply_runtime_stats(true)
 
+func heal_to_full() -> void:
+	is_dead = false
+	hp = max_hp
+	_refresh_health_bar()
+	_spawn_combat_text("FULL HP", Color(0.65, 1.0, 0.75, 1.0), 0.9)
+
+func heal(amount: float) -> void:
+	if is_dead or amount <= 0.0:
+		return
+	var hp_before := hp
+	hp = minf(max_hp, hp + amount)
+	_refresh_health_bar()
+	var healed := hp - hp_before
+	if healed > 0.0:
+		_spawn_combat_text("+%d" % int(round(healed)), Color(0.55, 1.0, 0.72, 1.0), 0.85)
+
+func apply_bastion(duration: float = SchoolRules.EARTH_BASTION_DURATION, defense_bonus: float = SchoolRules.EARTH_BASTION_DEFENSE_BONUS) -> void:
+	if is_dead:
+		return
+	bastion_time_left = maxf(bastion_time_left, duration)
+	bastion_defense_bonus = maxf(bastion_defense_bonus, defense_bonus)
+	_spawn_combat_text("BASTION", Color(0.78, 0.68, 0.46, 1.0), 0.88)
+
+func get_effective_defense() -> float:
+	var base_defense := stats_component.get_defense()
+	if bastion_time_left <= 0.0:
+		return base_defense
+	return base_defense * (1.0 + bastion_defense_bonus)
+
+func _tick_hp_regen(delta: float) -> void:
+	regen_text_timer = maxf(0.0, regen_text_timer - delta)
+	if hp >= max_hp:
+		regen_text_accumulator = 0.0
+		return
+	var regen_per_sec := GameState.get_hero_hp_regen_per_sec(max_hp)
+	if regen_per_sec <= 0.0:
+		return
+	var hp_before := hp
+	hp = minf(max_hp, hp + regen_per_sec * delta)
+	var healed := hp - hp_before
+	if healed <= 0.0:
+		return
+	regen_text_accumulator += healed
+	_refresh_health_bar()
+	if regen_text_timer <= 0.0 and regen_text_accumulator >= 0.5:
+		_spawn_combat_text("+%d" % int(round(regen_text_accumulator)), Color(0.48, 1.0, 0.68, 0.88), 0.78)
+		regen_text_accumulator = 0.0
+		regen_text_timer = 1.0
+
+func _tick_bastion(delta: float) -> void:
+	if bastion_time_left <= 0.0:
+		return
+	bastion_time_left = maxf(0.0, bastion_time_left - delta)
+	if bastion_time_left <= 0.0:
+		bastion_defense_bonus = 0.0
+
 func die() -> void:
+	if is_dead:
+		return
+	is_dead = true
+	hp = 0.0
+	_refresh_health_bar()
 	died.emit()
 	SignalBus.emit_hero_died()
 
@@ -89,6 +196,24 @@ func play_skill_cast(skill_name: StringName) -> void:
 			_play_body_pulse(Color(1.0, 0.35, 0.12, 1.0), 1.2, 0.18)
 		&"ash_storm":
 			_play_body_pulse(Color(0.92, 0.32, 0.08, 1.0), 1.26, 0.22)
+		&"stone_spike":
+			_play_body_pulse(Color(0.62, 0.50, 0.34, 1.0), 1.12, 0.14)
+		&"quake_ring":
+			_play_body_pulse(Color(0.54, 0.42, 0.28, 1.0), 1.18, 0.18)
+		&"bastion_crash":
+			_play_body_pulse(Color(0.72, 0.58, 0.36, 1.0), 1.24, 0.22)
+		&"razor_gust":
+			_play_body_pulse(Color(0.78, 0.92, 1.0, 1.0), 1.10, 0.12)
+		&"cyclone_arc":
+			_play_body_pulse(Color(0.70, 0.88, 1.0, 1.0), 1.16, 0.16)
+		&"sky_flurry":
+			_play_body_pulse(Color(0.84, 0.96, 1.0, 1.0), 1.22, 0.20)
+		&"spark_jump":
+			_play_body_pulse(Color(1.0, 0.94, 0.35, 1.0), 1.12, 0.12)
+		&"volt_lance":
+			_play_body_pulse(Color(1.0, 0.88, 0.24, 1.0), 1.18, 0.16)
+		&"thunder_crown":
+			_play_body_pulse(Color(0.55, 0.76, 1.0, 1.0), 1.24, 0.22)
 		_:
 			_play_body_pulse(Color(0.85, 0.85, 1.0, 1.0), 1.1, 0.12)
 
@@ -114,11 +239,15 @@ func _apply_runtime_stats(restore_full_hp: bool) -> void:
 	if max_hp > 0.0:
 		previous_hp_ratio = hp / max_hp
 	max_hp = stats_component.get_max_hp()
+	if movement_component != null:
+		movement_component.move_speed = GameState.get_hero_move_speed()
 	if restore_full_hp:
 		hp = max_hp
 	else:
 		hp = clampf(max_hp * previous_hp_ratio, 0.0, max_hp)
 	_refresh_health_bar()
+	if not restore_full_hp and hp <= 0.0 and not is_dead:
+		call_deferred("die")
 
 func _spawn_combat_text(text: String, color: Color, scale_value: float) -> void:
 	var label := Label.new()

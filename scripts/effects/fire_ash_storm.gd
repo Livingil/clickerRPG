@@ -78,7 +78,7 @@ func _current_power() -> float:
 	var tf := (life_time - windup_duration - travel_duration) / maxf(0.001, fade_duration)
 	return 1.0 - clampf(tf, 0.0, 1.0)
 
-func _draw_wall_band(radius: float, half_width: float, power: float) -> void:
+func _draw_wall_band(radius: float, _half_width: float, power: float) -> void:
 	var inner_r := maxf(8.0, radius - wall_thickness * 0.5)
 	var outer_r := radius + wall_thickness * 0.5
 	var segments := 30

@@ -13,6 +13,8 @@ func move_towards_target(target: Node2D, delta: float) -> void:
 	var to_target := desired_position - enemy.global_position
 	if to_target.length() <= stop_distance:
 		return
+	if enemy.is_control_locked():
+		return
 
-	enemy.global_position += to_target.normalized() * enemy.speed * delta
+	enemy.global_position += to_target.normalized() * enemy.speed * enemy.get_movement_speed_multiplier() * delta
 	enemy.clamp_to_arena()

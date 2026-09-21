@@ -31,7 +31,7 @@ func set_wave_controller(value: WaveController) -> void:
 
 func _on_spawn_timer_timeout() -> void:
 	_cleanup_enemies()
-	var free_slots := get_current_max_active_enemies() - active_enemies.size()
+	var free_slots: int = get_current_max_active_enemies() - active_enemies.size()
 	if free_slots <= 0:
 		return
 
@@ -64,7 +64,7 @@ func spawn_enemy(spawn_kind: StringName = &"normal") -> void:
 	if hero == null:
 		return
 
-	var enemy := scene_to_spawn.instantiate() as Enemy
+	var enemy: Enemy = scene_to_spawn.instantiate() as Enemy
 	if enemy == null:
 		return
 
@@ -95,14 +95,14 @@ func clear_active_enemies() -> void:
 	active_enemies.clear()
 
 func _generate_spawn_position() -> Vector2:
-	var horizontal := randf_range(-GameConstants.ENEMY_SPAWN_RADIUS_X, GameConstants.ENEMY_SPAWN_RADIUS_X)
-	var vertical := randf_range(-GameConstants.ENEMY_SPAWN_RADIUS_Y, GameConstants.ENEMY_SPAWN_RADIUS_Y)
-	var offset := Vector2(horizontal, vertical)
+	var horizontal: float = randf_range(-GameConstants.ENEMY_SPAWN_RADIUS_X, GameConstants.ENEMY_SPAWN_RADIUS_X)
+	var vertical: float = randf_range(-GameConstants.ENEMY_SPAWN_RADIUS_Y, GameConstants.ENEMY_SPAWN_RADIUS_Y)
+	var offset: Vector2 = Vector2(horizontal, vertical)
 
 	if offset.length() < 180.0:
 		offset = offset.normalized() * 180.0
 
-	var spawn_position := GameConstants.ARENA_CENTER + offset
+	var spawn_position: Vector2 = GameConstants.ARENA_CENTER + offset
 	return Vector2(
 		clampf(spawn_position.x, GameConstants.ARENA_MIN.x + 24.0, GameConstants.ARENA_MAX.x - 24.0),
 		clampf(spawn_position.y, GameConstants.ARENA_MIN.y + 24.0, GameConstants.ARENA_MAX.y - 24.0)

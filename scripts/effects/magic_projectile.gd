@@ -9,6 +9,7 @@ var is_crit: bool = false
 var target: Enemy
 var school_id: StringName = &"fire"
 var accuracy: float = 0.0
+var attack_result: Dictionary = {}
 @onready var body: Polygon2D = $Body
 @onready var glow: Polygon2D = $Glow
 @onready var trail: Line2D = $Trail
@@ -17,10 +18,11 @@ var accuracy: float = 0.0
 var trail_points: Array[Vector2] = []
 var trail_max_points: int = 8
 
-func setup(target_enemy: Enemy, projectile_damage: float, crit: bool, attack_school_id: StringName, attack_accuracy: float) -> void:
+func setup(target_enemy: Enemy, resolved_attack: Dictionary, attack_school_id: StringName, attack_accuracy: float) -> void:
 	target = target_enemy
-	damage = projectile_damage
-	is_crit = crit
+	attack_result = resolved_attack.duplicate(true)
+	damage = float(attack_result.get("schoolDamage", 0.0))
+	is_crit = bool(attack_result.get("isCrit", false))
 	school_id = attack_school_id
 	accuracy = attack_accuracy
 	if is_node_ready():
@@ -42,11 +44,10 @@ func _physics_process(delta: float) -> void:
 	var step := speed * delta
 
 	if distance <= step:
-		if is_crit:
-			target.receive_school_crit_hit(damage, school_id, accuracy)
-		else:
-			target.receive_school_hit(damage, school_id, accuracy)
-		_spawn_hit_flash()
+		var hit := target.receive_resolved_school_hit(attack_result, school_id, accuracy)
+		if hit:
+			GameState.add_school_mastery_xp(school_id, 1)
+			_spawn_hit_flash()
 		queue_free()
 		return
 
