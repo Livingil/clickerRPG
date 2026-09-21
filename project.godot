@@ -23,6 +23,7 @@ config/features=PackedStringArray("4.6")
 GameConstants="*res://autoload/game_constants.gd"
 GameState="*res://autoload/game_state.gd"
 SignalBus="*res://autoload/signal_bus.gd"
+BackendClient="*res://autoload/backend_client.gd"
 SaveSystem="*res://autoload/save_system.gd"
 
 [display]
