@@ -6,10 +6,10 @@
 - Death does not change school or equipped skills.
 - School mastery is permanent on the account.
 - Skill slots are permanent on the account and unlock at highest reached waves:
-  - slot 1 at wave 10
-  - slot 2 at wave 20
-  - slot 3 at wave 30
-  - slot 4 at wave 50
+  - slot 1 at wave 0
+  - slot 2 at wave 5
+  - slot 3 at wave 10
+  - slot 4 at wave 40
 
 ## Base Combat Rule
 
@@ -26,8 +26,8 @@
 - Each school has 10 core mastery levels.
 - School skills unlock at:
   - level 1 -> skill 1
-  - level 5 -> skill 2
-  - level 10 -> skill 3
+  - level 3 -> skill 2
+  - level 5 -> skill 3
 - At level 10, all 3 skills of that school enter the global skill pool for future rebirths.
 - After level 10, mastery continues infinitely for small eternal bonuses.
 
@@ -46,6 +46,7 @@
 - Skill 2: Cinder Burst
 - Skill 3: Ash Storm
 - Post-10 direction: burn potency and fire damage
+- Runtime status: implemented.
 
 ### Water
 - Role: slow, control, sustain, freezing tempo
@@ -54,6 +55,7 @@
 - Skill 2: Tidal Pulse
 - Skill 3: Glacial Field
 - Post-10 direction: chill potency and water damage
+- Runtime status: basic school-damage runtime is implemented; unique VFX/control mechanics are not implemented yet.
 
 ### Earth
 - Role: heavy hits, armor break, durable pressure
@@ -62,6 +64,7 @@
 - Skill 2: Quake Ring
 - Skill 3: Bastion Crash
 - Post-10 direction: armor break and earth damage
+- Runtime status: basic school-damage runtime is implemented; unique VFX/armor-break mechanics are not implemented yet.
 
 ### Air
 - Role: tempo, multihit, mobility-style pressure
@@ -70,6 +73,7 @@
 - Skill 2: Cyclone Arc
 - Skill 3: Sky Flurry
 - Post-10 direction: air attack speed and multihit chance
+- Runtime status: basic school-damage runtime is implemented; unique VFX/tempo mechanics are not implemented yet.
 
 ### Lightning
 - Role: burst, chain hits, crit/proc play
@@ -78,3 +82,4 @@
 - Skill 2: Volt Lance
 - Skill 3: Thunder Crown
 - Post-10 direction: chain efficiency and lightning damage
+- Runtime status: basic school-damage runtime is implemented; unique VFX/chain mechanics are not implemented yet.

@@ -12,3 +12,8 @@ Thumbs.db
 # Keep third-party folder contents as regular files only; ignore nested VCS metadata if present
 third_party/**/.git
 third_party/kenney-particle-pack/
+
+# Backend local/runtime artifacts
+backend/node_modules/
+backend/dist/
+backend/.env
