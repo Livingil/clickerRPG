@@ -41,3 +41,7 @@ text = "Stored Echo: 0\nActive Echo: 0\nActive Bonus: +0.0 dmg  +0.00 atk/s"
 [node name="PrestigeButton" type="Button" parent="Margin/Content"]
 layout_mode = 2
 text = "Prestige Reset"
+
+[node name="DevResetButton" type="Button" parent="Margin/Content"]
+layout_mode = 2
+text = "Start Over (dev)"

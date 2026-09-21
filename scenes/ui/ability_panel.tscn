@@ -22,7 +22,7 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Content" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
 [node name="Title" type="Label" parent="Margin/Content"]
 layout_mode = 2
@@ -32,22 +32,36 @@ text = "Abilities"
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="SchoolValue" type="Label" parent="Margin/Content"]
+[node name="ProgressCard" type="PanelContainer" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="ProgressMargin" type="MarginContainer" parent="Margin/Content/ProgressCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="ProgressRows" type="VBoxContainer" parent="Margin/Content/ProgressCard/ProgressMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SchoolValue" type="Label" parent="Margin/Content/ProgressCard/ProgressMargin/ProgressRows"]
 layout_mode = 2
 text = "School"
 autowrap_mode = 3
 
-[node name="MasteryValue" type="Label" parent="Margin/Content"]
+[node name="MasteryValue" type="Label" parent="Margin/Content/ProgressCard/ProgressMargin/ProgressRows"]
 layout_mode = 2
 text = "Lv.0  XP 0"
 autowrap_mode = 3
 
-[node name="CurrentBonusValue" type="Label" parent="Margin/Content"]
+[node name="CurrentBonusValue" type="Label" parent="Margin/Content/ProgressCard/ProgressMargin/ProgressRows"]
 layout_mode = 2
 text = "Current bonus"
 autowrap_mode = 3
 
-[node name="NextUnlockValue" type="Label" parent="Margin/Content"]
+[node name="NextUnlockValue" type="Label" parent="Margin/Content/ProgressCard/ProgressMargin/ProgressRows"]
 layout_mode = 2
 text = "Next unlock"
 autowrap_mode = 3
@@ -59,20 +73,124 @@ size_flags_vertical = 3
 [node name="Body" type="VBoxContainer" parent="Margin/Content/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Columns" type="HBoxContainer" parent="Margin/Content/Scroll/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="AvailableSection" type="PanelContainer" parent="Margin/Content/Scroll/Body/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+
+[node name="AvailableMargin" type="MarginContainer" parent="Margin/Content/Scroll/Body/Columns/AvailableSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="AvailableRows" type="VBoxContainer" parent="Margin/Content/Scroll/Body/Columns/AvailableSection/AvailableMargin"]
+layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="AvailableHeader" type="Label" parent="Margin/Content/Scroll/Body"]
+[node name="AvailableHeader" type="Label" parent="Margin/Content/Scroll/Body/Columns/AvailableSection/AvailableMargin/AvailableRows"]
 layout_mode = 2
 text = "Available"
 
-[node name="AvailableButtons" type="VBoxContainer" parent="Margin/Content/Scroll/Body"]
+[node name="AvailableButtons" type="GridContainer" parent="Margin/Content/Scroll/Body/Columns/AvailableSection/AvailableMargin/AvailableRows"]
 layout_mode = 2
-theme_override_constants/separation = 4
+size_flags_horizontal = 3
+columns = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
 
-[node name="SlotsHeader" type="Label" parent="Margin/Content"]
+[node name="SlotsSection" type="PanelContainer" parent="Margin/Content/Scroll/Body/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+
+[node name="SlotsMargin" type="MarginContainer" parent="Margin/Content/Scroll/Body/Columns/SlotsSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="SlotsRows" type="VBoxContainer" parent="Margin/Content/Scroll/Body/Columns/SlotsSection/SlotsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SlotsHeader" type="Label" parent="Margin/Content/Scroll/Body/Columns/SlotsSection/SlotsMargin/SlotsRows"]
 layout_mode = 2
 text = "Slots"
 
-[node name="SkillRows" type="VBoxContainer" parent="Margin/Content"]
+[node name="SkillRowsCenter" type="CenterContainer" parent="Margin/Content/Scroll/Body/Columns/SlotsSection/SlotsMargin/SlotsRows"]
 layout_mode = 2
-theme_override_constants/separation = 4
+size_flags_horizontal = 3
+
+[node name="SkillRows" type="GridContainer" parent="Margin/Content/Scroll/Body/Columns/SlotsSection/SlotsMargin/SlotsRows/SkillRowsCenter"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="SkillInfoOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+color = Color(0, 0, 0, 0.45)
+
+[node name="SkillInfoModal" type="PanelContainer" parent="SkillInfoOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -210.0
+offset_right = 230.0
+offset_bottom = 210.0
+
+[node name="ModalMargin" type="MarginContainer" parent="SkillInfoOverlay/SkillInfoModal"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="ModalRows" type="VBoxContainer" parent="SkillInfoOverlay/SkillInfoModal/ModalMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TopRow" type="HBoxContainer" parent="SkillInfoOverlay/SkillInfoModal/ModalMargin/ModalRows"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SkillInfoHeader" type="Label" parent="SkillInfoOverlay/SkillInfoModal/ModalMargin/ModalRows/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Информация о навыке"
+
+[node name="SkillInfoCloseButton" type="Button" parent="SkillInfoOverlay/SkillInfoModal/ModalMargin/ModalRows/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(92, 0)
+text = "Закрыть"
+
+[node name="SkillInfoText" type="RichTextLabel" parent="SkillInfoOverlay/SkillInfoModal/ModalMargin/ModalRows"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+fit_content = false
+scroll_active = true
+bbcode_enabled = true
+autowrap_mode = 3
+text = "Выберите навык, чтобы увидеть описание."

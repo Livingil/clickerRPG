@@ -6,7 +6,6 @@ const TAB_UPGRADES: StringName = &"upgrades"
 const TAB_RUN: StringName = &"run"
 const CHALLENGE_TIME_LIMIT: float = 30.0
 const DEV_PREVIEW_TIMER_KEY: Key = KEY_F6
-
 @onready var gold_value_label: Label = $Root/HeaderBar/HeaderMargin/HeaderContent/TopRow/GoldValue
 @onready var essence_value_label: Label = $Root/HeaderBar/HeaderMargin/HeaderContent/TopRow/EssenceValue
 @onready var wave_value_label: Label = $Root/HeaderBar/HeaderMargin/HeaderContent/TopRow/WaveValue
@@ -39,21 +38,21 @@ const DEV_PREVIEW_TIMER_KEY: Key = KEY_F6
 @onready var hero_damage_toggle: CheckButton = $Root/SettingsPopup/Margin/Content/HeroDamageToggle
 @onready var hero_miss_toggle: CheckButton = $Root/SettingsPopup/Margin/Content/HeroMissToggle
 @onready var settings_summary_label: Label = $Root/SettingsPopup/Margin/Content/Summary
-@onready var sim_button: Button = $Root/SettingsPopup/Margin/Content/SimButton
-@onready var sim_result_label: Label = $Root/SettingsPopup/Margin/Content/SimScroll/SimResult
-@onready var sim_report_popup: PanelContainer = $Root/SimReportPopup
-@onready var sim_report_title: Label = $Root/SimReportPopup/Margin/Content/TopRow/Title
-@onready var sim_report_close_button: Button = $Root/SimReportPopup/Margin/Content/TopRow/CloseButton
-@onready var sim_report_rich_text: RichTextLabel = $Root/SimReportPopup/Margin/Content/ReportScroll/ReportRichText
 
-var active_tab: StringName = &""
+var info_popup: InfoPopup
+var panel_router: HudPanelRouter = HudPanelRouter.new()
+var ad_boost_hud: AdBoostHudController = AdBoostHudController.new()
+var mono_wave_alert: MonoWaveAlertController = MonoWaveAlertController.new()
+var power_report_popup: PowerReportPopupController = PowerReportPopupController.new()
+var afk_reward_popup: AfkRewardPopupController = AfkRewardPopupController.new()
+var school_level_popup: SchoolLevelPopupController = SchoolLevelPopupController.new()
 var hero: Hero
 var dev_preview_timer_active: bool = false
 var dev_preview_time_left: float = 0.0
 var hp_refresh_accumulator: float = 0.0
 
 func _ready() -> void:
-	var gameplay_root := get_parent().get_node_or_null("GameplayRoot")
+	var gameplay_root: Node = get_parent().get_node_or_null("GameplayRoot")
 	if gameplay_root != null:
 		hero = gameplay_root.get_node_or_null("Hero") as Hero
 
@@ -75,7 +74,6 @@ func _ready() -> void:
 	$Root/BottomSheetContainer/SheetMargin/TabContentHost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	$Root/PrestigePopup.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	$Root/SettingsPopup.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	$Root/SimReportPopup.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	skills_tab_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	upgrades_tab_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	run_tab_button.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -87,17 +85,46 @@ func _ready() -> void:
 	miss_toggle.mouse_filter = Control.MOUSE_FILTER_STOP
 	hero_damage_toggle.mouse_filter = Control.MOUSE_FILTER_STOP
 	hero_miss_toggle.mouse_filter = Control.MOUSE_FILTER_STOP
-	sim_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	sim_report_close_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	mono_wave_alert.configure($Root)
+	ad_boost_hud.configure($Root)
+	afk_reward_popup.configure($Root)
+	school_level_popup.configure($Root)
+	_setup_info_popup()
+	power_report_popup.configure($Root)
+	panel_router.configure(
+		sheet_container,
+		ability_panel,
+		upgrade_panel,
+		run_panel,
+		prestige_popup,
+		settings_popup,
+		skills_tab_button,
+		upgrades_tab_button,
+		run_tab_button
+	)
 
 	GameState.resources_changed.connect(_refresh_resources)
 	GameState.echo_changed.connect(_refresh_echo)
 	GameState.hero_stats_changed.connect(_refresh_stats)
 	GameState.school_state_changed.connect(_refresh_school_status)
 	GameState.school_mastery_changed.connect(_refresh_school_status)
+	GameState.school_mastery_level_reached.connect(Callable(school_level_popup, "show_report"))
+	GameState.run_death_report_ready.connect(Callable(power_report_popup, "show_run_death_report"))
+	GameState.prestige_report_ready.connect(Callable(power_report_popup, "show_prestige_report"))
+	GameState.prestige_unlocked.connect(_show_prestige_unlocked_info)
+	GameState.skill_slot_unlocked.connect(_show_skill_slot_unlocked_info)
+	GameState.milestone_boss_reward_granted.connect(_show_milestone_boss_reward_info)
 	GameState.combat_text_settings_changed.connect(_refresh_combat_text_settings)
 	GameState.language_changed.connect(_refresh_localized_texts)
+	GameState.ad_boost_offer_changed.connect(Callable(ad_boost_hud, "on_ad_boost_offer_changed"))
+	GameState.ad_boosts_changed.connect(Callable(ad_boost_hud, "refresh_ad_boost_indicator"))
+	GameState.ad_boosts_changed.connect(Callable(ad_boost_hud, "refresh_speed_ad_button"))
+	GameState.offline_rewards_granted.connect(Callable(afk_reward_popup, "show_report"))
+	ad_boost_hud.random_ad_boost_accepted.connect(_on_random_ad_boost_accepted)
+	school_level_popup.open_skills_requested.connect(_open_skills_from_school_popup)
+	ad_boost_hud.on_ad_boost_offer_changed(GameState.get_current_ad_boost_offer())
 	SignalBus.wave_changed.connect(_refresh_wave)
+	SignalBus.mono_wave_started.connect(Callable(mono_wave_alert, "show_alert"))
 	SignalBus.milestone_challenge_state_changed.connect(_on_milestone_challenge_state_changed)
 
 	skills_tab_button.pressed.connect(_on_tab_pressed.bind(TAB_SKILLS))
@@ -111,28 +138,26 @@ func _ready() -> void:
 	miss_toggle.toggled.connect(_on_combat_toggle_changed)
 	hero_damage_toggle.toggled.connect(_on_combat_toggle_changed)
 	hero_miss_toggle.toggled.connect(_on_combat_toggle_changed)
-	sim_button.pressed.connect(_run_balance_sim)
-	sim_report_close_button.pressed.connect(_close_sim_report)
 	retry_boss_button.pressed.connect(_on_retry_boss_pressed)
 
 	sheet_container.visible = false
 	prestige_popup.visible = false
 	settings_popup.visible = false
-	sim_report_popup.visible = false
 	challenge_timer_layer.visible = false
 	retry_boss_button.visible = false
 	challenge_timer_bar.min_value = 0.0
 	challenge_timer_bar.max_value = CHALLENGE_TIME_LIMIT
 	challenge_timer_bar.value = CHALLENGE_TIME_LIMIT
 	challenge_timer_label.text = "30с"
-	_set_active_tab(&"")
+	panel_router.set_active_tab(&"")
 	_refresh_resources(GameState.gold, GameState.essence)
 	_refresh_echo(GameState.echo_collected, GameState.echo_power)
 	_refresh_stats()
 	_refresh_school_status()
-	_refresh_wave(1)
+	_refresh_wave(GameState.current_run_wave)
 	_setup_language_options()
 	_refresh_localized_texts()
+	afk_reward_popup.show_report(GameState.get_pending_offline_reward_report())
 
 func _process(_delta: float) -> void:
 	if dev_preview_timer_active:
@@ -145,12 +170,14 @@ func _process(_delta: float) -> void:
 	if hp_refresh_accumulator >= 0.1:
 		hp_refresh_accumulator = 0.0
 		_refresh_hp()
+	mono_wave_alert.process(_delta)
+	ad_boost_hud.process(_delta)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not OS.is_debug_build():
 		return
 	if event is InputEventKey:
-		var key_event := event as InputEventKey
+		var key_event: InputEventKey = event as InputEventKey
 		if key_event.pressed and not key_event.echo and key_event.keycode == DEV_PREVIEW_TIMER_KEY:
 			dev_preview_timer_active = true
 			dev_preview_time_left = CHALLENGE_TIME_LIMIT
@@ -194,9 +221,9 @@ func _refresh_hp() -> void:
 	hp_value_label.text = "HP %d/%d" % [int(round(hero.hp)), int(round(hero.max_hp))]
 
 func _refresh_school_status() -> void:
-	var summary := GameState.get_active_school_summary()
-	var level_xp := int(summary["mastery_xp"]) - int(summary["current_level_floor_xp"])
-	var next_level_xp := int(summary["next_level_xp"]) - int(summary["current_level_floor_xp"])
+	var summary: Dictionary = GameState.get_active_school_summary()
+	var level_xp: int = int(summary["mastery_xp"]) - int(summary["current_level_floor_xp"])
+	var next_level_xp: int = int(summary["next_level_xp"]) - int(summary["current_level_floor_xp"])
 	school_value_label.text = "%s Lv%d XP %d/%d" % [
 		summary["name"],
 		summary["mastery_level"],
@@ -205,27 +232,16 @@ func _refresh_school_status() -> void:
 	]
 
 func _on_tab_pressed(tab_id: StringName) -> void:
-	if active_tab == tab_id:
-		_set_active_tab(&"")
-		return
-	_set_active_tab(tab_id)
+	panel_router.toggle_tab(tab_id)
 
 func _set_active_tab(tab_id: StringName) -> void:
-	active_tab = tab_id
-	sheet_container.visible = active_tab != &""
-	ability_panel.visible = active_tab == TAB_SKILLS
-	upgrade_panel.visible = active_tab == TAB_UPGRADES
-	run_panel.visible = active_tab == TAB_RUN
-
-	skills_tab_button.button_pressed = active_tab == TAB_SKILLS
-	upgrades_tab_button.button_pressed = active_tab == TAB_UPGRADES
-	run_tab_button.button_pressed = active_tab == TAB_RUN
+	panel_router.set_active_tab(tab_id)
 
 func _toggle_prestige_popup() -> void:
-	prestige_popup.visible = not prestige_popup.visible
+	panel_router.toggle_prestige_popup()
 
 func _toggle_settings_popup() -> void:
-	settings_popup.visible = not settings_popup.visible
+	panel_router.toggle_settings_popup()
 
 func _on_combat_toggle_changed(_value: bool) -> void:
 	GameState.set_combat_text_settings(
@@ -242,14 +258,14 @@ func _refresh_combat_text_settings() -> void:
 	miss_toggle.set_pressed_no_signal(GameState.show_miss_text)
 	hero_damage_toggle.set_pressed_no_signal(GameState.show_hero_damage_text)
 	hero_miss_toggle.set_pressed_no_signal(GameState.show_hero_miss_text)
-	var on_text := GameState.loc("ui.on")
-	var off_text := GameState.loc("ui.off")
-	var enemy_line := GameState.loc("ui.enemy_summary") % [
+	var on_text: String = GameState.loc("ui.on")
+	var off_text: String = GameState.loc("ui.off")
+	var enemy_line: String = GameState.loc("ui.enemy_summary") % [
 		on_text if GameState.show_damage_text else off_text,
 		on_text if GameState.show_crit_text else off_text,
 		on_text if GameState.show_miss_text else off_text,
 	]
-	var hero_line := GameState.loc("ui.hero_summary") % [
+	var hero_line: String = GameState.loc("ui.hero_summary") % [
 		on_text if GameState.show_hero_damage_text else off_text,
 		on_text if GameState.show_hero_miss_text else off_text,
 	]
@@ -264,14 +280,14 @@ func _setup_language_options() -> void:
 	_select_current_language_option()
 
 func _on_language_selected(index: int) -> void:
-	var language_code_str := String(language_option.get_item_metadata(index))
+	var language_code_str: String = String(language_option.get_item_metadata(index))
 	var language_code: StringName = StringName(language_code_str)
 	GameState.set_language(language_code)
 	_select_current_language_option()
 
 func _select_current_language_option() -> void:
 	for index in range(language_option.item_count):
-		var language_code := language_option.get_item_metadata(index) as StringName
+		var language_code: StringName = language_option.get_item_metadata(index) as StringName
 		if language_code == GameState.current_language:
 			language_option.select(index)
 			return
@@ -289,61 +305,63 @@ func _refresh_localized_texts() -> void:
 	miss_toggle.text = GameState.loc("ui.show_miss")
 	hero_damage_toggle.text = GameState.loc("ui.show_hero_damage")
 	hero_miss_toggle.text = GameState.loc("ui.show_hero_miss")
-	sim_button.text = "Запустить Симуляцию Баланса" if GameState.current_language == &"ru" else "Run Balance Sim"
 	retry_boss_button.text = "Вызвать босса" if GameState.current_language == &"ru" else "Summon Boss"
-	sim_report_title.text = "Отчет Симуляции Баланса" if GameState.current_language == &"ru" else "Balance Simulation Report"
-	sim_report_close_button.text = "Закрыть" if GameState.current_language == &"ru" else "Close"
-	if sim_result_label.text.is_empty():
-		sim_result_label.text = "Здесь будет отчет симуляции." if GameState.current_language == &"ru" else "Simulation report will appear here."
 	_refresh_combat_text_settings()
 
-func _run_balance_sim() -> void:
-	var rows := GameState.run_balance_simulation(2000, 200)
-	if rows.is_empty():
-		sim_result_label.text = "Нет данных симуляции." if GameState.current_language == &"ru" else "No simulation data."
+func _on_random_ad_boost_accepted(boost_id: StringName) -> void:
+	if boost_id == GameState.AD_BOOST_SECOND_WIND and hero != null:
+		hero.heal_to_full()
+		_refresh_hp()
+
+func _open_skills_from_school_popup() -> void:
+	_set_active_tab(TAB_SKILLS)
+
+func _setup_info_popup() -> void:
+	info_popup = InfoPopup.new()
+	info_popup.action_requested.connect(_on_info_popup_action_requested)
+	$Root.add_child(info_popup)
+
+func _show_skill_slot_unlocked_info(report: Dictionary) -> void:
+	var message: Dictionary = HudReportTextBuilder.build_skill_slot_unlocked_message(report, GameState.current_language)
+	_show_info_message(
+		String(message.get("title", "")),
+		String(message.get("body", "")),
+		String(message.get("action_text", "")),
+		message.get("action", &"") as StringName
+	)
+
+func _show_prestige_unlocked_info(report: Dictionary) -> void:
+	var message: Dictionary = HudReportTextBuilder.build_prestige_unlocked_message(report, GameState.current_language)
+	_show_info_message(
+		String(message.get("title", "")),
+		String(message.get("body", "")),
+		String(message.get("action_text", "")),
+		message.get("action", &"") as StringName
+	)
+
+func _show_milestone_boss_reward_info(report: Dictionary) -> void:
+	var message: Dictionary = HudReportTextBuilder.build_milestone_boss_reward_message(report, GameState.current_language)
+	_show_info_message(
+		String(message.get("title", "")),
+		String(message.get("body", "")),
+		String(message.get("action_text", "")),
+		message.get("action", &"") as StringName
+	)
+
+func _show_info_message(title: String, body: String, action_text: String = "", action: StringName = &"") -> void:
+	if info_popup == null:
 		return
+	info_popup.show_message(title, body, action_text, action)
+	if info_popup.close_button != null:
+		info_popup.close_button.text = "Закрыть" if GameState.current_language == &"ru" else "Close"
 
-	var lines: Array[String] = []
-	lines.append("[b]%s[/b]" % ("Баланс-отчет" if GameState.current_language == &"ru" else "Balance Report"))
-	lines.append("")
-	lines.append("[b]Wave | DPS | TTK Normal | TTK Apex | Echo | Gold[/b]")
-	for row_data in rows:
-		var wave: int = int(row_data.get("wave", 0))
-		var hero_dps: float = float(row_data.get("hero_dps", 0.0))
-		var normal_ttk: float = float(row_data.get("normal_ttk", 0.0))
-		var apex_ttk: float = float(row_data.get("apex_ttk", 0.0))
-		var echo_power: int = int(row_data.get("echo_power", 0))
-		var gold_now: int = int(row_data.get("gold", 0))
-		lines.append(
-			("W%d | %.1f | %.2fs | %.2fs | %d | %d" % [wave, hero_dps, normal_ttk, apex_ttk, echo_power, gold_now])
-		)
-
-	var last := rows[rows.size() - 1]
-	var eq: Dictionary = last.get("equip", {})
-	lines.append("")
-	lines.append("[b]Final State[/b]")
-	lines.append(
-		("Eq: W%d H%d C%d G%d B%d R%d A%d Re%d" % [
-			int(eq.get(&"weapon", 0)),
-			int(eq.get(&"helm", 0)),
-			int(eq.get(&"chest", 0)),
-			int(eq.get(&"gloves", 0)),
-			int(eq.get(&"boots", 0)),
-			int(eq.get(&"ring", 0)),
-			int(eq.get(&"amulet", 0)),
-			int(eq.get(&"relic", 0)),
-		])
-	)
-	lines.append(
-		("Artifacts: %d owned / total levels %d" % [
-			int(last.get("artifacts_owned", 0)),
-			int(last.get("artifact_levels", 0)),
-		])
-	)
-	sim_report_rich_text.clear()
-	sim_report_rich_text.text = "\n".join(lines)
-	sim_report_popup.visible = true
-	settings_popup.visible = false
-
-func _close_sim_report() -> void:
-	sim_report_popup.visible = false
+func _on_info_popup_action_requested(action: StringName) -> void:
+	match action:
+		&"open_skills":
+			_set_active_tab(TAB_SKILLS)
+		&"open_prestige":
+			panel_router.open_prestige_popup()
+		&"open_artifacts":
+			_set_active_tab(TAB_UPGRADES)
+			if upgrade_panel != null:
+				upgrade_panel.tabs.current_tab = 1
