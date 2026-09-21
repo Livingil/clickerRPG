@@ -151,6 +151,8 @@ func _claim_death_rewards() -> void:
 	var echo_gain: int = GameState.get_echo_gain_for_enemy(boss_kind, wave_number)
 	if BackendClient.queue_enemy_reward(server_instance_id, reward_gold, reward_essence, echo_gain):
 		return
+	if not BackendClient.should_apply_local_progress_fallback():
+		return
 	GameState.add_gold(reward_gold)
 	GameState.add_essence(reward_essence)
 	GameState.add_echo(echo_gain)

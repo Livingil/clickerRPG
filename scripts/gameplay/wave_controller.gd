@@ -92,8 +92,6 @@ func handle_enemy_killed(enemy: Enemy, active_enemy_count: int) -> void:
 		&"mini", &"grand", &"apex":
 			milestone_challenge.on_milestone_boss_defeated(current_wave, enemy.boss_kind)
 			milestone_defeated_this_wave = true
-			if enemy.boss_kind == &"apex":
-				GameState.register_apex_boss_kill(current_wave)
 
 	if milestone_defeated_this_wave:
 		call_deferred("advance_wave")

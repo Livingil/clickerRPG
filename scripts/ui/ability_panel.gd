@@ -156,7 +156,7 @@ func _refresh_slots() -> void:
 
 func _on_school_tab_pressed(school_id: StringName) -> void:
 	var result: Dictionary = await _request_backend_command("school.setActive", {"schoolId": String(school_id)})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.set_active_school(school_id)
 	pending_skill_id = &""
 	selected_skill_info_id = &""
@@ -175,7 +175,7 @@ func _on_slot_pressed(slot_index: int) -> void:
 			"skillId": String(pending_skill_id),
 		})
 		var changed: bool = bool(result.get("success", false))
-		if bool(result.get("offline", false)):
+		if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 			changed = GameState.replace_skill(slot_index, pending_skill_id)
 		if changed:
 			pending_skill_id = &""
@@ -183,7 +183,7 @@ func _on_slot_pressed(slot_index: int) -> void:
 		return
 	var result: Dictionary = await _request_backend_command("school.clearSkill", {"slotIndex": slot_index})
 	var cleared: bool = bool(result.get("success", false))
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		cleared = GameState.clear_skill_slot(slot_index)
 	if cleared:
 		_refresh_slots()

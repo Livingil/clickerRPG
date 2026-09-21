@@ -1,12 +1,13 @@
 import { normalizeSave } from "../domain/godotSave/codec.js";
 import { resolveEnemyAttack, resolveHeroAttack, resolveHeroAttackBatch } from "../domain/godotSave/combat.js";
-import { activateOfferedAdBoost, activateSpeedAdBoost, grantApexArtifactReward, requestAdBoostOffer, unlockEquipment, upgradeArtifact, upgradeEquipment } from "../domain/godotSave/economy.js";
+import { activateOfferedAdBoost, activateSpeedAdBoost, requestAdBoostOffer, unlockEquipment, upgradeArtifact, upgradeEquipment } from "../domain/godotSave/economy.js";
 import { claimOfflineRewards } from "../domain/godotSave/offline.js";
-import { activateEcho, applyRunDeath, applyWaveChanged, performPrestige, resetAll, upgradePrestige } from "../domain/godotSave/progress.js";
+import { activateEcho, applyRunDeath, performPrestige, resetAll, upgradePrestige } from "../domain/godotSave/progress.js";
 import { addSchoolXp, addSchoolXpBatch, applyWeaponSchoolOffer, equipSkill, setActiveSchool } from "../domain/godotSave/school.js";
 import type { CommandPayload, GodotSave } from "../domain/godotSave/types.js";
 import { readNumber, readString } from "../domain/godotSave/value.js";
-import { claimEnemyKill, startWave } from "../domain/godotSave/wave.js";
+import { claimEnemyKill, claimEnemyKillBatch, startWave } from "../domain/godotSave/wave.js";
+import { env } from "../config/env.js";
 import { badRequest } from "../http/errors.js";
 import { getPlayerOrThrow } from "./playerService.js";
 
@@ -36,7 +37,7 @@ function applyCommand(save: GodotSave, command: string, payload: CommandPayload)
     case "artifact.upgrade":
       return upgradeArtifact(save, readString(payload, "artifactId"));
     case "artifact.grantApexReward":
-      return grantApexArtifactReward(save, readNumber(payload, "wave", 1));
+      return { success: false, reason: "apex_rewards_are_claimed_by_enemy_kill" };
     case "echo.activate":
       return activateEcho(save);
     case "prestige.perform":
@@ -57,10 +58,12 @@ function applyCommand(save: GodotSave, command: string, payload: CommandPayload)
       return applyWeaponSchoolOffer(save, readNumber(payload, "offerIndex", -1));
     case "run.enemyKilled":
       return claimEnemyKill(save, readString(payload, "enemyInstanceId"));
+    case "run.enemyKilledBatch":
+      return claimEnemyKillBatch(save, payload.enemyInstanceIds);
     case "run.claimRewards":
       return { success: false, reason: "client_reward_claims_disabled" };
     case "run.waveChanged":
-      return applyWaveChanged(save, readNumber(payload, "wave", 1));
+      return { success: false, reason: "wave_changes_must_use_wave_start" };
     case "wave.start":
       return startWave(save, readNumber(payload, "wave", 1));
     case "combat.heroAttack":
@@ -78,8 +81,9 @@ function applyCommand(save: GodotSave, command: string, payload: CommandPayload)
     case "ad.activateSpeed":
       return activateSpeedAdBoost(save);
     case "ad.activateBoost":
-      return activateOfferedAdBoost(save, readString(payload, "offerId"), readString(payload, "boostId"));
+      return activateOfferedAdBoost(save, readString(payload, "offerId"));
     case "dev.resetAll":
+      if (env.NODE_ENV === "production") return { success: false, reason: "dev_command_disabled" };
       return resetAll(save);
     default:
       throw badRequest(`Unknown Godot command: ${command}`);

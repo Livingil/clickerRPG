@@ -101,7 +101,7 @@ func _on_state_changed(_arg0: Variant = null, _arg1: Variant = null) -> void:
 func _on_prestige_pressed() -> void:
 	var result: Dictionary = await _request_backend_command("prestige.perform", {})
 	var performed: bool = bool(result.get("success", false))
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		performed = GameState.perform_prestige()
 	if performed:
 		SaveSystem.save_game()
@@ -110,13 +110,13 @@ func _on_prestige_pressed() -> void:
 
 func _on_buy_upgrade(upgrade_id: StringName) -> void:
 	var result: Dictionary = await _request_backend_command("prestige.upgrade", {"upgradeId": String(upgrade_id)})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.buy_prestige_upgrade(upgrade_id)
 	_refresh()
 
 func _on_dev_reset_pressed() -> void:
 	var result: Dictionary = await _request_backend_command("dev.resetAll", {})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.dev_reset_all_progress()
 	SaveSystem.save_game()
 	SignalBus.emit_runtime_reset_requested()

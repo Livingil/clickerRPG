@@ -1,7 +1,7 @@
 import type { GodotSave } from "./types.js";
 import { intValue } from "./value.js";
 import { buildEnemyConfig } from "./enemyPlan.js";
-import { claimRunRewards } from "./economy.js";
+import { claimRunRewards, grantApexArtifactReward } from "./economy.js";
 import { echoGainForEnemy } from "./rewardRules.js";
 import { randomUUID } from "node:crypto";
 
@@ -44,14 +44,30 @@ export function claimEnemyKill(save: GodotSave, enemyInstanceId: string) {
   const reward = session.enemyRewards[enemyInstanceId];
   if (!reward) return { success: false, reason: "unknown_enemy" };
   if (reward.claimed) return { success: true, duplicate: true, goldGain: 0, essenceGain: 0, echoGain: 0 };
+  const speedCheck = validateKillTiming(session);
+  if (!speedCheck.success) return speedCheck;
 
   reward.claimed = true;
+  session.claimedCount = intValue(session.claimedCount, 0) + 1;
   const result = claimRunRewards(save, {
     gold: reward.gold,
     essence: reward.essence,
     echo: reward.echo
   });
-  return { ...result, enemyInstanceId, wave: session.wave, bossKind: reward.bossKind };
+  const artifactReward = reward.bossKind === "apex" ? grantApexArtifactReward(save, session.wave) : null;
+  return { ...result, enemyInstanceId, wave: session.wave, bossKind: reward.bossKind, artifactReward };
+}
+
+export function claimEnemyKillBatch(save: GodotSave, enemyInstanceIds: unknown) {
+  if (!Array.isArray(enemyInstanceIds)) return { success: false, reason: "invalid_batch" };
+  const results = [];
+  for (const rawId of enemyInstanceIds.slice(0, 200)) {
+    results.push(claimEnemyKill(save, String(rawId)));
+  }
+  return {
+    success: results.every((result) => Boolean(result.success)),
+    results
+  };
 }
 
 function normalEnemyCountForWave(wave: number) {
@@ -88,6 +104,7 @@ function createWaveSession(wave: number): WaveSession {
     id: randomUUID(),
     wave,
     startedAt: new Date().toISOString(),
+    claimedCount: 0,
     enemyRewards: {}
   };
 }
@@ -113,6 +130,18 @@ function readActiveWaveSession(save: GodotSave): WaveSession | null {
   if (typeof session.id !== "string" || !Number.isInteger(session.wave)) return null;
   if (!session.enemyRewards || typeof session.enemyRewards !== "object" || Array.isArray(session.enemyRewards)) return null;
   return session as WaveSession;
+}
+
+function validateKillTiming(session: WaveSession) {
+  const startedAtMs = Date.parse(session.startedAt);
+  if (!Number.isFinite(startedAtMs)) return { success: false, reason: "invalid_wave_session_time" };
+  const elapsedSec = Math.max(0, (Date.now() - startedAtMs) / 1000);
+  const nextClaimIndex = intValue(session.claimedCount, 0) + 1;
+  const minElapsedSec = Math.min(3, nextClaimIndex * 0.02);
+  if (elapsedSec < minElapsedSec) {
+    return { success: false, reason: "kill_too_fast", elapsedSec, minElapsedSec };
+  }
+  return { success: true };
 }
 
 function rollWeightedNormalEnemyType(wave: number) {
@@ -163,6 +192,7 @@ type WaveSession = {
   id: string;
   wave: number;
   startedAt: string;
+  claimedCount: number;
   enemyRewards: Record<string, {
     gold: number;
     essence: number;

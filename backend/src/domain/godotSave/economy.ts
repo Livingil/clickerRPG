@@ -117,7 +117,7 @@ export function requestAdBoostOffer(save: GodotSave) {
   return { success: true, offer: publicAdOffer(offer, now) };
 }
 
-export function activateOfferedAdBoost(save: GodotSave, offerId: string, fallbackBoostId = "") {
+export function activateOfferedAdBoost(save: GodotSave, offerId: string) {
   const now = Date.now();
   const offer = readPendingAdOffer(save);
   if (offer) {
@@ -127,13 +127,7 @@ export function activateOfferedAdBoost(save: GodotSave, offerId: string, fallbac
     save.server_next_ad_offer_at_ms = now + adOfferCooldownMs;
     return activateAdBoost(save, offer.boostId, adBoostDurations[offer.boostId] ?? 0);
   }
-
-  // Transitional path for the current Godot HUD. Still server-limited and allow-listed.
-  if (!isKnownAdBoost(fallbackBoostId)) return { success: false, reason: "missing_offer" };
-  const cooldownUntilMs = numberValue(save.server_next_ad_offer_at_ms, 0);
-  if (cooldownUntilMs > now) return { success: false, reason: "cooldown", cooldownMs: cooldownUntilMs - now };
-  save.server_next_ad_offer_at_ms = now + adOfferCooldownMs;
-  return activateAdBoost(save, fallbackBoostId, adBoostDurations[fallbackBoostId] ?? 0);
+  return { success: false, reason: "missing_offer" };
 }
 
 export function activateSpeedAdBoost(save: GodotSave) {

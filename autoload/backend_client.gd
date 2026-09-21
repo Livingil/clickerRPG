@@ -15,6 +15,7 @@ const REWARD_SYNC_INTERVAL_SEC: float = 1.0
 const SCHOOL_XP_SYNC_INTERVAL_SEC: float = 2.0
 
 var enabled: bool = true
+var allow_offline_progress_fallback: bool = false
 var player_id: String = ""
 var session_token: String = ""
 var device_id: String = ""
@@ -31,6 +32,7 @@ var school_xp_sync_time_left: float = SCHOOL_XP_SYNC_INTERVAL_SEC
 var pending_school_xp: Dictionary = {}
 
 func _ready() -> void:
+	allow_offline_progress_fallback = OS.is_debug_build()
 	device_id = _load_or_create_device_id()
 	set_process(true)
 
@@ -106,16 +108,15 @@ func flush_run_rewards() -> void:
 	var batch: Array[Dictionary] = pending_enemy_kills.duplicate(true)
 	pending_enemy_kills.clear()
 	reward_sync_time_left = REWARD_SYNC_INTERVAL_SEC
-	var stopped_for_offline: bool = false
-	for i in range(batch.size()):
-		var entry: Dictionary = batch[i]
-		var result: Dictionary = await request_command("run.enemyKilled", {
-			"enemyInstanceId": String(entry.get("enemyInstanceId", "")),
-		})
-		if bool(result.get("offline", false)):
-			pending_enemy_kills.append_array(batch.slice(i))
-			stopped_for_offline = true
-			break
+	var enemy_ids: Array[String] = []
+	for entry in batch:
+		var enemy_id: String = String(entry.get("enemyInstanceId", ""))
+		if not enemy_id.is_empty():
+			enemy_ids.append(enemy_id)
+	var result: Dictionary = await request_command("run.enemyKilledBatch", {"enemyInstanceIds": enemy_ids})
+	var stopped_for_offline: bool = bool(result.get("offline", false))
+	if stopped_for_offline:
+		pending_enemy_kills.append_array(batch)
 	reward_sync_in_progress = false
 	run_rewards_flushed.emit()
 	if _has_pending_run_rewards() and not stopped_for_offline:
@@ -181,6 +182,9 @@ func _push_pending_save_data() -> void:
 
 func _has_pending_run_rewards() -> bool:
 	return not pending_enemy_kills.is_empty()
+
+func should_apply_local_progress_fallback() -> bool:
+	return not enabled or allow_offline_progress_fallback
 
 func _request_json(method: String, path: String, body: Dictionary = {}) -> Dictionary:
 	var request: HTTPRequest = HTTPRequest.new()

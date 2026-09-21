@@ -216,15 +216,22 @@ func _create_ad_boost_indicator_row(boost: Dictionary) -> Control:
 
 func _on_speed_ad_pressed() -> void:
 	var result: Dictionary = await BackendClient.request_command("ad.activateSpeed", {})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.accept_game_speed_ad_boost()
 	refresh_speed_ad_button()
 	refresh_ad_boost_indicator()
 
 func _on_ad_boost_pressed() -> void:
 	var boost_id: StringName = GameState.get_current_ad_boost_offer().get("id", &"") as StringName
-	var result: Dictionary = await BackendClient.request_command("ad.activateBoost", {"boostId": String(boost_id)})
-	if bool(result.get("offline", false)):
+	var offer_id: String = ""
+	if BackendClient.logged_in:
+		var offer_result: Dictionary = await BackendClient.request_command("ad.requestOffer", {})
+		if bool(offer_result.get("success", false)):
+			var offer: Dictionary = (offer_result.get("result", {}) as Dictionary).get("offer", {}) as Dictionary
+			offer_id = String(offer.get("offerId", ""))
+			boost_id = StringName(String(offer.get("id", boost_id)))
+	var result: Dictionary = await BackendClient.request_command("ad.activateBoost", {"offerId": offer_id})
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		boost_id = GameState.accept_ad_boost_offer()
 	elif bool(result.get("success", false)):
 		GameState.dismiss_ad_boost_offer()

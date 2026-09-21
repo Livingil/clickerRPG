@@ -236,25 +236,25 @@ func _build_artifact_row(row_data: Dictionary) -> VBoxContainer:
 
 func _on_buy_equipment(equipment_id: StringName) -> void:
 	var result: Dictionary = await _request_backend_command("equipment.upgrade", {"equipmentId": String(equipment_id)})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.buy_equipment_upgrade(equipment_id)
 	_build_equipment_tab()
 
 func _on_unlock_equipment(equipment_id: StringName) -> void:
 	var result: Dictionary = await _request_backend_command("equipment.unlock", {"equipmentId": String(equipment_id)})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.unlock_equipment(equipment_id)
 	_build_equipment_tab()
 
 func _on_buy_artifact(artifact_id: StringName) -> void:
 	var result: Dictionary = await _request_backend_command("artifact.upgrade", {"artifactId": String(artifact_id)})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.buy_artifact_upgrade(artifact_id)
 	_build_artifacts_tab()
 
 func _on_pick_weapon_offer(offer_index: int) -> void:
 	var result: Dictionary = await _request_backend_command("weapon.applySchoolOffer", {"offerIndex": offer_index})
-	if bool(result.get("offline", false)):
+	if bool(result.get("offline", false)) and BackendClient.should_apply_local_progress_fallback():
 		GameState.apply_weapon_skill_offer(offer_index)
 	_build_equipment_tab()
 

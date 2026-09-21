@@ -44,6 +44,7 @@ docker compose up -d
 
 `POST /api/auth/dev-login` returns `sessionToken`. Pass it as `Authorization: Bearer <sessionToken>`.
 The insecure `x-player-id`/`?playerId=` fallback is only for development unless `ALLOW_INSECURE_PLAYER_ID_HEADER=true`.
+Legacy typed routes (`/api/run`, `/api/equipment`, `/api/school`, `/api/offline`, etc.) are mounted only outside production unless `ALLOW_LEGACY_STATE_ROUTES=true`.
 
 ## Godot command API
 
@@ -63,7 +64,7 @@ Supported commands:
 - `equipment.unlock`
 - `equipment.upgrade`
 - `artifact.upgrade`
-- `artifact.grantApexReward`
+- `artifact.grantApexReward` (disabled; apex rewards are claimed by apex enemy kill)
 - `echo.activate`
 - `prestige.perform`
 - `prestige.upgrade`
@@ -74,7 +75,8 @@ Supported commands:
 - `school.clearSkill`
 - `weapon.applySchoolOffer`
 - `run.enemyKilled`
-- `run.waveChanged`
+- `run.enemyKilledBatch`
+- `run.waveChanged` (disabled; use `wave.start`)
 - `run.death`
 - `offline.claim`
 - `wave.start`
@@ -83,6 +85,6 @@ Supported commands:
 - `ad.activateBoost`
 - `dev.resetAll`
 
-Real-time combat is still local/optimistic. Wave start returns server-issued enemy `instanceId` values, and rewards are claimed through `run.enemyKilled` once per id. Direct client-provided reward claims through `run.claimRewards` are disabled.
+Real-time combat is still local/optimistic. Wave start returns server-issued enemy `instanceId` values, and rewards are claimed through `run.enemyKilledBatch` once per id. Direct client-provided reward claims through `run.claimRewards` are disabled. Direct wave mutation through `run.waveChanged` is disabled; wave progress must go through `wave.start`.
 
-School XP is server-capped per event and per minute. Offline rewards use server timestamps. Ad boosts are allow-listed, cooldown-limited, and can use server-issued offers.
+School XP is server-capped per event and per minute. Offline rewards use server timestamps. Ad boosts are allow-listed, cooldown-limited, and random ad boosts require server-issued offers.

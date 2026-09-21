@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { env } from "../config/env.js";
 import { adRoutes } from "./adRoutes.js";
 import { artifactRoutes } from "./artifactRoutes.js";
 import { authRoutes } from "./authRoutes.js";
@@ -15,12 +16,15 @@ export const apiRouter = Router();
 
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/player", playerRoutes);
-apiRouter.use("/run", runRoutes);
-apiRouter.use("/equipment", equipmentRoutes);
 apiRouter.use("/godot", godotRoutes);
-apiRouter.use("/artifact", artifactRoutes);
-apiRouter.use("/echo", echoRoutes);
-apiRouter.use("/prestige", prestigeRoutes);
-apiRouter.use("/school", schoolRoutes);
-apiRouter.use("/ad", adRoutes);
-apiRouter.use("/offline", offlineRoutes);
+
+if (env.NODE_ENV !== "production" || env.ALLOW_LEGACY_STATE_ROUTES) {
+  apiRouter.use("/run", runRoutes);
+  apiRouter.use("/equipment", equipmentRoutes);
+  apiRouter.use("/artifact", artifactRoutes);
+  apiRouter.use("/echo", echoRoutes);
+  apiRouter.use("/prestige", prestigeRoutes);
+  apiRouter.use("/school", schoolRoutes);
+  apiRouter.use("/ad", adRoutes);
+  apiRouter.use("/offline", offlineRoutes);
+}

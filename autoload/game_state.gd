@@ -173,6 +173,8 @@ func add_active_school_mastery_xp(value: int) -> void:
 func add_school_mastery_xp(school_id: StringName, value: int) -> void:
 	if BackendClient.queue_school_xp(school_id, value):
 		return
+	if not BackendClient.should_apply_local_progress_fallback():
+		return
 	SchoolStateServiceData.add_mastery_xp_to_game_state(self, school_id, value)
 
 func set_active_school(school_id: StringName) -> void:
@@ -241,10 +243,8 @@ func get_artifact_ui_rows() -> Array[Dictionary]:
 	return InventoryProgressServiceData.build_artifact_ui_rows_for_game_state(self)
 
 func register_apex_boss_kill(wave_number: int) -> void:
-	if BackendClient.logged_in:
-		var result: Dictionary = await BackendClient.request_command("artifact.grantApexReward", {"wave": wave_number})
-		if not bool(result.get("offline", false)):
-			return
+	if not BackendClient.should_apply_local_progress_fallback():
+		return
 	InventoryProgressServiceData.register_apex_boss_kill_on_game_state(self, wave_number)
 
 func should_block_incoming_hit() -> bool:
