@@ -23,7 +23,7 @@ static func resolve_hero_attack(
 		school_id,
 		extra_scale
 	)
-	if BackendClient.enabled and BackendClient.logged_in:
+	if BackendClient.should_use_remote_combat_resolver():
 		var result: Dictionary = await BackendClient.request_command(
 			"combat.heroAttack",
 			_build_hero_attack_payload(hero_stats, target, school_id, damage, extra_scale, crit_chance, crit_multiplier)
@@ -63,7 +63,7 @@ static func apply_school_hit_batch(
 		return []
 
 	var results: Array = []
-	if BackendClient.enabled and BackendClient.logged_in:
+	if BackendClient.should_use_remote_combat_resolver():
 		var hits: Array[Dictionary] = []
 		for target in alive_targets:
 			hits.append(_build_hero_attack_payload(hero_stats, target, school_id, damage, 0.0, 0.0, 1.0))
@@ -100,7 +100,7 @@ static func resolve_enemy_attack(
 	accuracy: float
 ) -> Dictionary:
 	var local_result := _resolve_enemy_attack_local(attacker, target, damage, accuracy)
-	if BackendClient.enabled and BackendClient.logged_in:
+	if BackendClient.should_use_remote_combat_resolver():
 		var result: Dictionary = await BackendClient.request_command("combat.enemyAttack", {
 			"damage": damage,
 			"accuracy": accuracy,

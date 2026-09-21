@@ -53,11 +53,13 @@ Godot uses `/api/godot/command` for server-authoritative mutations of the same s
 ```json
 {
   "command": "equipment.upgrade",
-  "payload": { "equipmentId": "weapon" }
+  "payload": { "equipmentId": "weapon" },
+  "expectedServerRevision": 12,
+  "includeSaveData": true
 }
 ```
 
-Response contains `success`, command `result`, and authoritative `saveData`. The client applies returned `saveData` through `GameState.apply_save_data()`.
+Response contains `success`, command `result`, `serverRevision`, and authoritative `saveData` unless `includeSaveData` is `false`. The client applies returned `saveData` through `GameState.apply_save_data()`. Frequent commands such as enemy kill batches and school XP events use compact responses and only advance `serverRevision`.
 
 Supported commands:
 
@@ -69,8 +71,9 @@ Supported commands:
 - `prestige.perform`
 - `prestige.upgrade`
 - `school.setActive`
-- `school.addXp`
-- `school.addXpBatch`
+- `school.addXp` (development only in production-like authority flow)
+- `school.addXpBatch` (development only in production-like authority flow)
+- `school.addXpEvents`
 - `school.equipSkill`
 - `school.clearSkill`
 - `weapon.applySchoolOffer`
@@ -80,11 +83,12 @@ Supported commands:
 - `run.death`
 - `offline.claim`
 - `wave.start`
+- `wave.complete`
 - `ad.requestOffer`
 - `ad.activateSpeed`
 - `ad.activateBoost`
 - `dev.resetAll`
 
-Real-time combat is still local/optimistic. Wave start returns server-issued enemy `instanceId` values, and rewards are claimed through `run.enemyKilledBatch` once per id. Direct client-provided reward claims through `run.claimRewards` are disabled. Direct wave mutation through `run.waveChanged` is disabled; wave progress must go through `wave.start`.
+Real-time combat stays local by default. The old remote combat resolver is disabled in production because it accepts client-provided combat stats; it can be enabled only as a debug aid. Wave start returns server-issued enemy `instanceId` values, and rewards are claimed through `run.enemyKilledBatch` once per id. Wave progress must be confirmed with `wave.complete`, which checks required enemy claims and a soft server-estimated clear-time floor. Direct client-provided reward claims through `run.claimRewards` are disabled. Direct wave mutation through `run.waveChanged` is disabled.
 
-School XP is server-capped per event and per minute. Offline rewards use server timestamps. Ad boosts are allow-listed, cooldown-limited, and random ad boosts require server-issued offers.
+School XP uses allow-listed event types (`hit`, `skill_minor`, `skill_major`) and is capped per minute. Offline rewards use server timestamps. Ad boosts are allow-listed, cooldown-limited, and random ad boosts require server-issued offers.

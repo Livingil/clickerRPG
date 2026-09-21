@@ -5,6 +5,7 @@ static func build_save_data(game_state: Variant, save_version: int) -> Dictionar
 	game_state.last_save_unix = Time.get_unix_time_from_system()
 	return {
 		"version": save_version,
+		"server_revision": game_state.server_revision,
 		"last_save_unix": game_state.last_save_unix,
 		"gold": game_state.gold,
 		"essence": game_state.essence,
@@ -45,6 +46,9 @@ static func apply_save_data(game_state: Variant, data: Dictionary, save_version:
 	data = migrate_save_data(data, save_version)
 	var now_unix: int = Time.get_unix_time_from_system()
 	var saved_unix: int = int(data.get("last_save_unix", 0))
+	game_state.server_revision = maxi(0, int(data.get("server_revision", game_state.server_revision)))
+	if Engine.has_singleton("BackendClient"):
+		BackendClient.server_revision = maxi(BackendClient.server_revision, game_state.server_revision)
 
 	game_state.gold = maxi(0, int(data.get("gold", game_state.gold)))
 	game_state.essence = maxi(0, int(data.get("essence", game_state.essence)))

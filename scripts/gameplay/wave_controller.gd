@@ -12,6 +12,8 @@ var mono_normal_enemy_type: StringName = &""
 var server_normal_enemy_count: int = 0
 var server_normal_enemy_configs: Array[Dictionary] = []
 var server_boss_configs: Dictionary = {}
+var server_wave_session_id: String = ""
+var wave_complete_in_progress: bool = false
 var milestone_challenge: MilestoneChallengeController = MilestoneChallengeController.new()
 
 func _ready() -> void:
@@ -29,7 +31,13 @@ func bind_spawner(spawner: EnemySpawner) -> void:
 	_start_wave(maxi(1, GameState.current_run_wave))
 
 func advance_wave() -> void:
-	_start_wave(current_wave + 1)
+	if wave_complete_in_progress:
+		return
+	wave_complete_in_progress = true
+	var completed: bool = await _complete_current_wave_on_server()
+	wave_complete_in_progress = false
+	if completed or BackendClient.should_apply_local_progress_fallback():
+		_start_wave(current_wave + 1)
 
 func reset_to_first_wave() -> void:
 	milestone_challenge.reset_for_new_run()
@@ -154,6 +162,7 @@ func _start_wave(wave_number: int) -> void:
 	milestone_spawned_this_wave = false
 	milestone_defeated_this_wave = false
 	server_normal_enemy_count = int(wave_plan.get("normalCount", 0))
+	server_wave_session_id = String(wave_plan.get("waveSessionId", ""))
 	mono_normal_enemy_type = StringName(String(wave_plan.get("monoType", "")))
 	server_normal_enemy_configs = _parse_server_enemy_configs(wave_plan.get("normalEnemies", []))
 	server_boss_configs = wave_plan.get("bosses", {}) as Dictionary
@@ -166,11 +175,28 @@ func _start_wave(wave_number: int) -> void:
 func _request_wave_plan(wave_number: int) -> Dictionary:
 	if not BackendClient.logged_in:
 		return {}
-	var result: Dictionary = await BackendClient.request_command("wave.start", {"wave": wave_number})
+	var result: Dictionary = await BackendClient.request_command("wave.start", {
+		"wave": wave_number,
+		"includeMilestone": not milestone_challenge.is_farm_wave(wave_number),
+	})
 	if bool(result.get("offline", false)) or not bool(result.get("success", false)):
 		return {}
 	var command_result: Dictionary = result.get("result", {}) as Dictionary
-	return command_result.get("plan", {}) as Dictionary
+	var plan: Dictionary = command_result.get("plan", {}) as Dictionary
+	plan["waveSessionId"] = String(command_result.get("waveSessionId", ""))
+	return plan
+
+func _complete_current_wave_on_server() -> bool:
+	if BackendClient.logged_in:
+		await BackendClient.flush_run_rewards()
+		var result: Dictionary = await BackendClient.request_command("wave.complete", {
+			"wave": current_wave,
+			"waveSessionId": server_wave_session_id,
+		}, false)
+		if bool(result.get("success", false)):
+			return true
+		return false
+	return false
 
 func _get_server_enemy_config(spawn_kind: StringName) -> Dictionary:
 	if spawn_kind == &"normal":

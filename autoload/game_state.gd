@@ -88,6 +88,7 @@ var ad_offer_time_left: float = 0.0
 var current_ad_boost_offer: Dictionary = {}
 var active_ad_boosts: Dictionary = {}
 var last_save_unix: int = 0
+var server_revision: int = 0
 var pending_offline_reward_report: Dictionary = {}
 
 var bonus_totals: Dictionary = {}

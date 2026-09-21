@@ -6,6 +6,11 @@ import { intValue, isRecord, requireId } from "./value.js";
 
 const maxSchoolXpEvent = 5;
 const maxSchoolXpPerMinute = 240;
+const schoolXpEventAmounts: Record<string, number> = {
+  hit: 1,
+  skill_minor: 2,
+  skill_major: 5
+};
 
 export function setActiveSchool(save: GodotSave, schoolId: string) {
   requireId(schoolId, schoolIds, "schoolId");
@@ -15,11 +20,7 @@ export function setActiveSchool(save: GodotSave, schoolId: string) {
 
 export function addSchoolXp(save: GodotSave, schoolId: string, amount: number) {
   requireId(schoolId, schoolIds, "schoolId");
-  const budget = consumeActionBudget(save, `school_xp:${schoolId}`, Math.min(maxSchoolXpEvent, amount), maxSchoolXpPerMinute, 60_000);
-  const xp = save.school_mastery_xp as Record<string, number>;
-  const appliedAmount = Math.max(0, Math.round(budget.allowed * getSchoolXpMultiplier(save)));
-  xp[schoolId] = Math.max(0, intValue(xp[schoolId], 0) + appliedAmount);
-  return { success: true, schoolId, amount: appliedAmount, xp: xp[schoolId], limited: budget.limited };
+  return applySchoolXpAmount(save, schoolId, Math.min(maxSchoolXpEvent, amount));
 }
 
 export function addSchoolXpBatch(save: GodotSave, batch: unknown) {
@@ -38,6 +39,33 @@ export function addSchoolXpBatch(save: GodotSave, batch: unknown) {
     applied[schoolId] = (applied[schoolId] ?? 0) + intValue(result.amount, 0);
   }
   return { success: true, applied };
+}
+
+export function addSchoolXpEvents(save: GodotSave, events: unknown) {
+  if (!Array.isArray(events)) return { success: false, reason: "invalid_events" };
+  const applied: Record<string, number> = {};
+  for (const rawEvent of events.slice(0, 200)) {
+    if (!isRecord(rawEvent)) continue;
+    const schoolId = String(rawEvent.schoolId ?? "");
+    requireId(schoolId, schoolIds, "schoolId");
+    const eventType = String(rawEvent.eventType ?? "");
+    const eventAmount = schoolXpEventAmounts[eventType] ?? 0;
+    if (eventAmount <= 0) continue;
+    const eventId = String(rawEvent.eventId ?? "");
+    if (!rememberEventOnce(save, "school_xp", eventId).fresh) continue;
+    const count = Math.min(100, Math.max(1, Math.floor(Number(rawEvent.count) || 1)));
+    const result = applySchoolXpAmount(save, schoolId, eventAmount * count);
+    applied[schoolId] = (applied[schoolId] ?? 0) + intValue(result.amount, 0);
+  }
+  return { success: true, applied };
+}
+
+function applySchoolXpAmount(save: GodotSave, schoolId: string, amount: number) {
+  const budget = consumeActionBudget(save, `school_xp:${schoolId}`, Math.max(0, amount), maxSchoolXpPerMinute, 60_000);
+  const xp = save.school_mastery_xp as Record<string, number>;
+  const appliedAmount = Math.max(0, Math.round(budget.allowed * getSchoolXpMultiplier(save)));
+  xp[schoolId] = Math.max(0, intValue(xp[schoolId], 0) + appliedAmount);
+  return { success: true, schoolId, amount: appliedAmount, xp: xp[schoolId], limited: budget.limited };
 }
 
 export function equipSkill(save: GodotSave, slotIndexValue: number, skillId: string) {

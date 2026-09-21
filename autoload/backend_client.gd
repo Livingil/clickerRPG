@@ -15,9 +15,12 @@ const REWARD_SYNC_INTERVAL_SEC: float = 1.0
 const SCHOOL_XP_SYNC_INTERVAL_SEC: float = 2.0
 
 var enabled: bool = true
+var production_mode: bool = false
 var allow_offline_progress_fallback: bool = false
+var use_remote_combat_resolver: bool = false
 var player_id: String = ""
 var session_token: String = ""
+var server_revision: int = 0
 var device_id: String = ""
 var logged_in: bool = false
 var login_in_progress: bool = false
@@ -32,7 +35,9 @@ var school_xp_sync_time_left: float = SCHOOL_XP_SYNC_INTERVAL_SEC
 var pending_school_xp: Dictionary = {}
 
 func _ready() -> void:
-	allow_offline_progress_fallback = OS.is_debug_build()
+	production_mode = not OS.is_debug_build()
+	allow_offline_progress_fallback = OS.is_debug_build() and OS.get_environment("CLICKERRPG_ALLOW_OFFLINE_PROGRESS") == "1"
+	use_remote_combat_resolver = OS.is_debug_build() and OS.get_environment("CLICKERRPG_USE_REMOTE_COMBAT") == "1"
 	device_id = _load_or_create_device_id()
 	set_process(true)
 
@@ -64,7 +69,7 @@ func push_save_data(save_data: Dictionary) -> void:
 		return
 	_push_pending_save_data()
 
-func request_command(command_name: String, payload: Dictionary = {}) -> Dictionary:
+func request_command(command_name: String, payload: Dictionary = {}, include_save_data: bool = true) -> Dictionary:
 	if not enabled:
 		return {"success": false, "offline": true}
 	if not logged_in:
@@ -73,15 +78,21 @@ func request_command(command_name: String, payload: Dictionary = {}) -> Dictiona
 			await login_completed
 	if not logged_in:
 		return {"success": false, "offline": true}
-	var response: Dictionary = await _request_json("POST", "/api/godot/command", {
+	var body: Dictionary = {
 		"command": command_name,
 		"payload": payload,
-	})
+		"includeSaveData": include_save_data,
+	}
+	if server_revision > 0:
+		body["expectedServerRevision"] = server_revision
+	var response: Dictionary = await _request_json("POST", "/api/godot/command", body)
 	if not bool(response.get("ok", false)):
 		return {"success": false, "offline": true}
 	var data: Dictionary = response.get("data", {})
+	server_revision = maxi(server_revision, int(data.get("serverRevision", server_revision)))
 	var save_data: Variant = data.get("saveData", null)
 	if save_data is Dictionary and not (save_data as Dictionary).is_empty():
+		server_revision = maxi(server_revision, int((save_data as Dictionary).get("server_revision", server_revision)))
 		server_save_received.emit((save_data as Dictionary).duplicate(true))
 	return data
 
@@ -113,7 +124,7 @@ func flush_run_rewards() -> void:
 		var enemy_id: String = String(entry.get("enemyInstanceId", ""))
 		if not enemy_id.is_empty():
 			enemy_ids.append(enemy_id)
-	var result: Dictionary = await request_command("run.enemyKilledBatch", {"enemyInstanceIds": enemy_ids})
+	var result: Dictionary = await request_command("run.enemyKilledBatch", {"enemyInstanceIds": enemy_ids}, false)
 	var stopped_for_offline: bool = bool(result.get("offline", false))
 	if stopped_for_offline:
 		pending_enemy_kills.append_array(batch)
@@ -125,8 +136,16 @@ func flush_run_rewards() -> void:
 func queue_school_xp(school_id: StringName, amount: int) -> bool:
 	if not enabled or not logged_in or amount <= 0:
 		return false
-	var key: String = String(school_id)
-	pending_school_xp[key] = int(pending_school_xp.get(key, 0)) + amount
+	var school_key: String = String(school_id)
+	var event_type: String = _school_xp_event_type_for_amount(amount)
+	var key: String = "%s:%s" % [school_key, event_type]
+	var entry: Dictionary = pending_school_xp.get(key, {
+		"schoolId": school_key,
+		"eventType": event_type,
+		"count": 0,
+	})
+	entry["count"] = int(entry.get("count", 0)) + 1
+	pending_school_xp[key] = entry
 	return true
 
 func flush_school_xp() -> void:
@@ -136,11 +155,19 @@ func flush_school_xp() -> void:
 	var batch: Dictionary = pending_school_xp.duplicate(true)
 	pending_school_xp.clear()
 	school_xp_sync_time_left = SCHOOL_XP_SYNC_INTERVAL_SEC
-	var result: Dictionary = await request_command("school.addXpBatch", {"batch": batch})
+	var events: Array[Dictionary] = []
+	for event_key in batch.keys():
+		var event: Dictionary = batch[event_key] as Dictionary
+		event["eventId"] = "%s-%s-%d" % [device_id, String(event_key), Time.get_ticks_msec()]
+		events.append(event)
+	var result: Dictionary = await request_command("school.addXpEvents", {"events": events}, false)
 	if bool(result.get("offline", false)):
-		for school_key in batch.keys():
-			var key: String = String(school_key)
-			pending_school_xp[key] = int(pending_school_xp.get(key, 0)) + int(batch[school_key])
+		for event_key in batch.keys():
+			var key: String = String(event_key)
+			var old_entry: Dictionary = batch[event_key] as Dictionary
+			var current: Dictionary = pending_school_xp.get(key, old_entry.duplicate(true))
+			current["count"] = int(current.get("count", 0)) + int(old_entry.get("count", 0))
+			pending_school_xp[key] = current
 	school_xp_sync_in_progress = false
 	if not pending_school_xp.is_empty():
 		school_xp_sync_time_left = SCHOOL_XP_SYNC_INTERVAL_SEC
@@ -154,9 +181,11 @@ func _login() -> void:
 		var data: Dictionary = response.get("data", {})
 		player_id = String(data.get("playerId", ""))
 		session_token = String(data.get("sessionToken", ""))
+		server_revision = int(data.get("serverRevision", server_revision))
 		logged_in = not player_id.is_empty() and not session_token.is_empty()
 		var save_data: Variant = data.get("saveData", null)
 		if save_data is Dictionary and not (save_data as Dictionary).is_empty():
+			server_revision = maxi(server_revision, int((save_data as Dictionary).get("server_revision", server_revision)))
 			server_save_loaded = true
 			pending_save_data.clear()
 			remote_save_loaded.emit((save_data as Dictionary).duplicate(true))
@@ -185,6 +214,16 @@ func _has_pending_run_rewards() -> bool:
 
 func should_apply_local_progress_fallback() -> bool:
 	return not enabled or allow_offline_progress_fallback
+
+func should_use_remote_combat_resolver() -> bool:
+	return enabled and logged_in and use_remote_combat_resolver
+
+func _school_xp_event_type_for_amount(amount: int) -> String:
+	if amount >= 5:
+		return "skill_major"
+	if amount >= 2:
+		return "skill_minor"
+	return "hit"
 
 func _request_json(method: String, path: String, body: Dictionary = {}) -> Dictionary:
 	var request: HTTPRequest = HTTPRequest.new()

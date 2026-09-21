@@ -5,6 +5,7 @@ import { hasValue, intValue, isRecord, numberValue } from "./value.js";
 export function normalizeSave(input: GodotSave): GodotSave {
   const save = { ...input };
   save.version = Math.max(1, intValue(save.version, 1));
+  save.server_revision = Math.max(0, intValue(save.server_revision, 0));
   save.gold = Math.max(0, intValue(save.gold, 0));
   save.essence = Math.max(0, intValue(save.essence, 0));
   save.echo_collected = Math.max(0, intValue(save.echo_collected, 0));

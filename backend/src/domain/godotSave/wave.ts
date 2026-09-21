@@ -9,7 +9,7 @@ const baseNormalEnemiesPerWave = 4;
 const normalEnemyWaveGrowth = 0.58;
 const monoWaveChance = 0.10;
 
-export function startWave(save: GodotSave, waveValue: number) {
+export function startWave(save: GodotSave, waveValue: number, options: { includeMilestone?: boolean } = {}) {
   const wave = Math.max(1, Math.floor(waveValue));
   const currentWave = intValue(save.current_run_wave, 1);
   const highestWave = intValue(save.highest_wave_reached, 1);
@@ -17,12 +17,11 @@ export function startWave(save: GodotSave, waveValue: number) {
   if (wave > maxAllowedWave) return { success: false, reason: "wave_jump_rejected", maxAllowedWave };
 
   save.current_run_wave = wave;
-  save.highest_wave_reached = Math.max(intValue(save.highest_wave_reached, 1), wave);
   const monoType = rollMonoNormalEnemyType(wave);
   const normalCount = normalEnemyCountForWave(wave);
-  const session = createWaveSession(wave);
+  const session = createWaveSession(save, wave);
   const normalEnemies = buildNormalEnemyPlan(wave, normalCount, monoType, session);
-  const bosses = buildBossPlan(wave, session);
+  const bosses = buildBossPlan(wave, session, options.includeMilestone ?? true);
   save.active_wave_session = session;
   return {
     success: true,
@@ -36,6 +35,29 @@ export function startWave(save: GodotSave, waveValue: number) {
       bosses
     }
   };
+}
+
+export function completeWave(save: GodotSave, waveValue: number, waveSessionId = "") {
+  const session = readActiveWaveSession(save);
+  if (!session) return { success: false, reason: "missing_wave_session" };
+  const wave = Math.max(1, Math.floor(waveValue));
+  if (session.wave !== wave || intValue(save.current_run_wave, 1) !== wave) {
+    return { success: false, reason: "wave_mismatch", currentWave: save.current_run_wave, sessionWave: session.wave };
+  }
+  if (waveSessionId && session.id !== waveSessionId) return { success: false, reason: "wave_session_mismatch" };
+
+  const missingEnemyIds = session.requiredEnemyIds.filter((enemyId) => !session.enemyRewards[enemyId]?.claimed);
+  if (missingEnemyIds.length > 0) {
+    return { success: false, reason: "wave_not_cleared", missingCount: missingEnemyIds.length };
+  }
+  const clearTiming = validateWaveClearTiming(session);
+  if (!clearTiming.success) return clearTiming;
+
+  const nextWave = wave + 1;
+  save.current_run_wave = nextWave;
+  save.highest_wave_reached = Math.max(intValue(save.highest_wave_reached, 1), nextWave);
+  save.active_wave_session = { ...session, completedAt: new Date().toISOString() };
+  return { success: true, wave, nextWave, highestWave: save.highest_wave_reached };
 }
 
 export function claimEnemyKill(save: GodotSave, enemyInstanceId: string) {
@@ -89,27 +111,33 @@ function buildNormalEnemyPlan(wave: number, count: number, monoType: string, ses
   return out;
 }
 
-function buildBossPlan(wave: number, session: WaveSession) {
+function buildBossPlan(wave: number, session: WaveSession, includeMilestone: boolean) {
   const bosses: Record<string, ReturnType<typeof buildEnemyConfig>> = {
-    wave_boss: registerPlannedEnemy(session, buildEnemyConfig("wave_boss", wave))
+    wave_boss: registerPlannedEnemy(session, buildEnemyConfig("wave_boss", wave), true)
   };
-  if (wave % 100 === 0) bosses.apex_boss = registerPlannedEnemy(session, buildEnemyConfig("apex_boss", wave));
-  else if (wave % 10 === 0) bosses.grand_boss = registerPlannedEnemy(session, buildEnemyConfig("grand_boss", wave));
-  else if (wave % 5 === 0) bosses.mini_boss = registerPlannedEnemy(session, buildEnemyConfig("mini_boss", wave));
+  if (!includeMilestone) return bosses;
+  if (wave % 100 === 0) bosses.apex_boss = registerPlannedEnemy(session, buildEnemyConfig("apex_boss", wave), true);
+  else if (wave % 10 === 0) bosses.grand_boss = registerPlannedEnemy(session, buildEnemyConfig("grand_boss", wave), true);
+  else if (wave % 5 === 0) bosses.mini_boss = registerPlannedEnemy(session, buildEnemyConfig("mini_boss", wave), true);
   return bosses;
 }
 
-function createWaveSession(wave: number): WaveSession {
+function createWaveSession(save: GodotSave, wave: number): WaveSession {
+  const estimatedPlayerDps = estimatePlayerDps(save);
   return {
     id: randomUUID(),
     wave,
     startedAt: new Date().toISOString(),
     claimedCount: 0,
+    minClearSec: estimateMinimumClearSecForHp(0, estimatedPlayerDps),
+    totalRequiredHp: 0,
+    estimatedPlayerDps,
+    requiredEnemyIds: [],
     enemyRewards: {}
   };
 }
 
-function registerPlannedEnemy(session: WaveSession, config: ReturnType<typeof buildEnemyConfig>) {
+function registerPlannedEnemy(session: WaveSession, config: ReturnType<typeof buildEnemyConfig>, requiredForCompletion = true) {
   const instanceId = randomUUID();
   const plannedConfig = { ...config, instanceId };
   const bossKind = String(plannedConfig.bossKind ?? "none");
@@ -120,6 +148,11 @@ function registerPlannedEnemy(session: WaveSession, config: ReturnType<typeof bu
     bossKind,
     claimed: false
   };
+  if (requiredForCompletion) {
+    session.requiredEnemyIds.push(instanceId);
+    session.totalRequiredHp = Math.max(0, session.totalRequiredHp) + Math.max(0, Number(plannedConfig.maxHp) || 0);
+    session.minClearSec = estimateMinimumClearSecForHp(session.totalRequiredHp, session.estimatedPlayerDps);
+  }
   return plannedConfig;
 }
 
@@ -129,6 +162,10 @@ function readActiveWaveSession(save: GodotSave): WaveSession | null {
   const session = raw as Partial<WaveSession>;
   if (typeof session.id !== "string" || !Number.isInteger(session.wave)) return null;
   if (!session.enemyRewards || typeof session.enemyRewards !== "object" || Array.isArray(session.enemyRewards)) return null;
+  if (!Array.isArray(session.requiredEnemyIds)) {
+    session.requiredEnemyIds = Object.keys(session.enemyRewards);
+  }
+  session.minClearSec = Math.max(0, Number(session.minClearSec) || 0);
   return session as WaveSession;
 }
 
@@ -142,6 +179,32 @@ function validateKillTiming(session: WaveSession) {
     return { success: false, reason: "kill_too_fast", elapsedSec, minElapsedSec };
   }
   return { success: true };
+}
+
+function validateWaveClearTiming(session: WaveSession) {
+  const startedAtMs = Date.parse(session.startedAt);
+  if (!Number.isFinite(startedAtMs)) return { success: false, reason: "invalid_wave_session_time" };
+  const elapsedSec = Math.max(0, (Date.now() - startedAtMs) / 1000);
+  const minClearSec = Math.max(0, Number(session.minClearSec) || 0);
+  if (elapsedSec < minClearSec) {
+    return { success: false, reason: "wave_cleared_too_fast", elapsedSec, minClearSec };
+  }
+  return { success: true };
+}
+
+function estimateMinimumClearSecForHp(totalHp: number, estimatedPlayerDps = 10) {
+  if (totalHp <= 0) return 0;
+  const perfectClearSec = totalHp / Math.max(1, estimatedPlayerDps);
+  return Math.min(12, Math.max(0.25, perfectClearSec * 0.05));
+}
+
+function estimatePlayerDps(save: GodotSave) {
+  const equipment = save.equipment_levels as Record<string, number> | undefined;
+  const prestige = save.prestige_upgrade_levels as Record<string, number> | undefined;
+  const weaponLevel = intValue(equipment?.weapon, 0);
+  const glovesLevel = intValue(equipment?.gloves, 0);
+  const attackPrestige = intValue(prestige?.attack, 0);
+  return (10 + weaponLevel * 1.8 + glovesLevel * 0.6) * (1 + attackPrestige * 0.006);
 }
 
 function rollWeightedNormalEnemyType(wave: number) {
@@ -192,7 +255,12 @@ type WaveSession = {
   id: string;
   wave: number;
   startedAt: string;
+  completedAt?: string;
   claimedCount: number;
+  minClearSec: number;
+  totalRequiredHp: number;
+  estimatedPlayerDps?: number;
+  requiredEnemyIds: string[];
   enemyRewards: Record<string, {
     gold: number;
     essence: number;

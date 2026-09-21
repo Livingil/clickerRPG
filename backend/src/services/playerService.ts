@@ -25,7 +25,14 @@ export async function devLogin(deviceId: string, name?: string) {
     await player.save();
   }
   const playerId = String(player._id);
-  return { playerId, sessionToken: createAuthToken(playerId), deviceId: player.deviceId, state: player.state, saveData: player.godotSave ?? null };
+  return {
+    playerId,
+    sessionToken: createAuthToken(playerId),
+    deviceId: player.deviceId,
+    state: player.state,
+    saveData: player.godotSave ?? null,
+    serverRevision: Number(player.godotSave?.server_revision ?? 0)
+  };
 }
 
 export async function getPlayerOrThrow(playerId: string) {
@@ -47,7 +54,13 @@ export async function getGodotSave(playerId: string) {
 export async function replaceGodotSave(playerId: string, saveData: Record<string, unknown>) {
   if (env.NODE_ENV === "production") throw badRequest("Direct save replacement is disabled");
   const player = await getPlayerOrThrow(playerId);
-  player.godotSave = { ...saveData, server_authoritative: true, server_saved_at: new Date().toISOString() };
+  const currentRevision = Number(player.godotSave?.server_revision ?? 0);
+  player.godotSave = normalizeSave({
+    ...saveData,
+    server_revision: currentRevision + 1,
+    server_authoritative: true,
+    server_saved_at: new Date().toISOString()
+  });
   player.markModified("godotSave");
   await player.save();
   return player.godotSave;
