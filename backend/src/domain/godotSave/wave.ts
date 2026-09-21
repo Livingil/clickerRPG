@@ -66,7 +66,7 @@ export function claimEnemyKill(save: GodotSave, enemyInstanceId: string) {
   const reward = session.enemyRewards[enemyInstanceId];
   if (!reward) return { success: false, reason: "unknown_enemy" };
   if (reward.claimed) return { success: true, duplicate: true, goldGain: 0, essenceGain: 0, echoGain: 0 };
-  const speedCheck = validateKillTiming(session);
+  const speedCheck = validateKillTiming(session, reward);
   if (!speedCheck.success) return speedCheck;
 
   reward.claimed = true;
@@ -83,11 +83,31 @@ export function claimEnemyKill(save: GodotSave, enemyInstanceId: string) {
 export function claimEnemyKillBatch(save: GodotSave, enemyInstanceIds: unknown) {
   if (!Array.isArray(enemyInstanceIds)) return { success: false, reason: "invalid_batch" };
   const results = [];
+  let goldGain = 0;
+  let essenceGain = 0;
+  let echoGain = 0;
+  let requiresFullSync = false;
+  let retryable = false;
   for (const rawId of enemyInstanceIds.slice(0, 200)) {
-    results.push(claimEnemyKill(save, String(rawId)));
+    const result = claimEnemyKill(save, String(rawId));
+    results.push(result);
+    if (result.success) {
+      const successResult = result as Record<string, unknown>;
+      goldGain += intValue(successResult.goldGain, 0);
+      essenceGain += intValue(successResult.essenceGain, 0);
+      echoGain += intValue(successResult.echoGain, 0);
+      requiresFullSync = requiresFullSync || Boolean(successResult.artifactReward);
+    } else if (result.reason === "kill_too_fast") {
+      retryable = true;
+    }
   }
   return {
     success: results.every((result) => Boolean(result.success)),
+    retryable,
+    goldGain,
+    essenceGain,
+    echoGain,
+    requiresFullSync,
     results
   };
 }
@@ -145,6 +165,7 @@ function registerPlannedEnemy(session: WaveSession, config: ReturnType<typeof bu
     gold: Math.max(0, Math.round(Number(plannedConfig.rewardGold) || 0)),
     essence: Math.max(0, Math.round(Number(plannedConfig.rewardEssence) || 0)),
     echo: echoGainForEnemy(bossKind, session.wave),
+    hp: Math.max(0, Number(plannedConfig.maxHp) || 0),
     bossKind,
     claimed: false
   };
@@ -169,12 +190,16 @@ function readActiveWaveSession(save: GodotSave): WaveSession | null {
   return session as WaveSession;
 }
 
-function validateKillTiming(session: WaveSession) {
+function validateKillTiming(session: WaveSession, reward: WaveEnemyReward) {
   const startedAtMs = Date.parse(session.startedAt);
   if (!Number.isFinite(startedAtMs)) return { success: false, reason: "invalid_wave_session_time" };
   const elapsedSec = Math.max(0, (Date.now() - startedAtMs) / 1000);
   const nextClaimIndex = intValue(session.claimedCount, 0) + 1;
-  const minElapsedSec = Math.min(3, nextClaimIndex * 0.02);
+  const claimedHp = Object.values(session.enemyRewards)
+    .filter((entry) => entry.claimed)
+    .reduce((sum, entry) => sum + Math.max(0, Number(entry.hp) || 0), 0);
+  const claimedPerfectClearSec = (claimedHp + Math.max(0, Number(reward.hp) || 0)) / Math.max(1, Number(session.estimatedPlayerDps) || 10);
+  const minElapsedSec = Math.min(12, Math.max(nextClaimIndex * 0.05, claimedPerfectClearSec * 0.04));
   if (elapsedSec < minElapsedSec) {
     return { success: false, reason: "kill_too_fast", elapsedSec, minElapsedSec };
   }
@@ -261,11 +286,14 @@ type WaveSession = {
   totalRequiredHp: number;
   estimatedPlayerDps?: number;
   requiredEnemyIds: string[];
-  enemyRewards: Record<string, {
-    gold: number;
-    essence: number;
-    echo: number;
-    bossKind: string;
-    claimed: boolean;
-  }>;
+  enemyRewards: Record<string, WaveEnemyReward>;
+};
+
+type WaveEnemyReward = {
+  gold: number;
+  essence: number;
+  echo: number;
+  hp: number;
+  bossKind: string;
+  claimed: boolean;
 };

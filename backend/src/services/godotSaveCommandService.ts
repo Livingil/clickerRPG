@@ -50,6 +50,8 @@ export async function executeGodotSaveCommand(playerId: string, command: string,
 
 function applyCommand(save: GodotSave, command: string, payload: CommandPayload) {
   switch (command) {
+    case "sync.snapshot":
+      return { success: true };
     case "equipment.unlock":
       return unlockEquipment(save, readString(payload, "equipmentId"));
     case "equipment.upgrade":

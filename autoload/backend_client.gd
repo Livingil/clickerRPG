@@ -94,6 +94,8 @@ func request_command(command_name: String, payload: Dictionary = {}, include_sav
 	if save_data is Dictionary and not (save_data as Dictionary).is_empty():
 		server_revision = maxi(server_revision, int((save_data as Dictionary).get("server_revision", server_revision)))
 		server_save_received.emit((save_data as Dictionary).duplicate(true))
+	else:
+		_apply_compact_command_result(command_name, data)
 	return data
 
 func queue_enemy_reward(enemy_instance_id: String, reward_gold: int, reward_essence: int, echo_gain: int) -> bool:
@@ -126,11 +128,14 @@ func flush_run_rewards() -> void:
 			enemy_ids.append(enemy_id)
 	var result: Dictionary = await request_command("run.enemyKilledBatch", {"enemyInstanceIds": enemy_ids}, false)
 	var stopped_for_offline: bool = bool(result.get("offline", false))
-	if stopped_for_offline:
+	var command_result: Dictionary = result.get("result", {}) as Dictionary
+	if stopped_for_offline or bool(command_result.get("retryable", false)):
 		pending_enemy_kills.append_array(batch)
 	reward_sync_in_progress = false
 	run_rewards_flushed.emit()
-	if _has_pending_run_rewards() and not stopped_for_offline:
+	if bool(command_result.get("requiresFullSync", false)):
+		await request_command("sync.snapshot", {}, true)
+	if _has_pending_run_rewards() and not stopped_for_offline and not bool(command_result.get("retryable", false)):
 		await flush_run_rewards()
 
 func queue_school_xp(school_id: StringName, amount: int) -> bool:
@@ -217,6 +222,18 @@ func should_apply_local_progress_fallback() -> bool:
 
 func should_use_remote_combat_resolver() -> bool:
 	return enabled and logged_in and use_remote_combat_resolver
+
+func _apply_compact_command_result(command_name: String, data: Dictionary) -> void:
+	var result: Dictionary = data.get("result", {}) as Dictionary
+	match command_name:
+		"run.enemyKilledBatch", "run.enemyKilled":
+			GameState.apply_server_reward_delta(
+				int(result.get("goldGain", 0)),
+				int(result.get("essenceGain", 0)),
+				int(result.get("echoGain", 0))
+			)
+		"school.addXpEvents":
+			GameState.apply_server_school_xp_delta(result.get("applied", {}) as Dictionary)
 
 func _school_xp_event_type_for_amount(amount: int) -> String:
 	if amount >= 5:

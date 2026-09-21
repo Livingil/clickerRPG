@@ -115,6 +115,53 @@ func add_essence(value: int) -> void:
 func add_echo(value: int) -> void:
 	ResourceProgressServiceData.add_echo_to_game_state(self, value)
 
+func apply_server_reward_delta(gold_gain: int, essence_gain: int, echo_gain: int) -> void:
+	var resources_changed_needed: bool = gold_gain != 0 or essence_gain != 0
+	var echo_changed_needed: bool = echo_gain != 0
+	gold = maxi(0, gold + gold_gain)
+	essence = maxi(0, essence + essence_gain)
+	echo_collected = maxi(0, echo_collected + echo_gain)
+	if resources_changed_needed:
+		resources_changed.emit(gold, essence)
+	if echo_changed_needed:
+		echo_changed.emit(echo_collected, echo_power)
+
+func apply_server_school_xp_delta(applied: Dictionary) -> void:
+	if applied.is_empty():
+		return
+	var previous_school_xp: Dictionary = school_mastery_xp.duplicate(true)
+	var changed: bool = false
+	for school_key in applied.keys():
+		var school_id: StringName = StringName(String(school_key))
+		if not SchoolRules.SCHOOL_DEFINITIONS.has(school_id):
+			continue
+		var amount: int = maxi(0, int(applied[school_key]))
+		if amount <= 0:
+			continue
+		school_mastery_xp[school_id] = get_school_mastery_xp(school_id) + amount
+		changed = true
+	if not changed:
+		return
+	_rebuild_school_state()
+	school_mastery_changed.emit()
+	for school_id in SchoolRules.SCHOOL_ORDER:
+		var old_core_level: int = SchoolProgressRulesData.get_school_core_mastery_level(school_id, previous_school_xp)
+		var old_total_level: int = SchoolProgressRulesData.get_school_mastery_level(school_id, previous_school_xp)
+		var new_core_level: int = get_school_core_mastery_level(school_id)
+		var new_total_level: int = get_school_mastery_level(school_id)
+		if new_total_level <= old_total_level:
+			continue
+		var report: Dictionary = SchoolProgressRulesData.build_level_report(
+			school_id,
+			old_core_level,
+			new_core_level,
+			old_total_level,
+			new_total_level,
+			current_language
+		)
+		if not report.is_empty():
+			school_mastery_level_reached.emit(report)
+
 func register_run_death(run_time_sec: float) -> void:
 	var result: Dictionary = ResourceProgressServiceData.build_run_death_result(
 		total_deaths,

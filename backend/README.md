@@ -23,7 +23,7 @@ docker compose up -d
 - `GET /health`
 - `POST /api/auth/dev-login`
 - `GET /api/player/save-data`
-- `PUT /api/player/save-data` (development/migration only)
+- `PUT /api/player/save-data` (development/migration only; not mounted in production)
 - `POST /api/godot/command`
 - `GET /api/player/state`
 - `POST /api/run/start`
@@ -44,7 +44,7 @@ docker compose up -d
 
 `POST /api/auth/dev-login` returns `sessionToken`. Pass it as `Authorization: Bearer <sessionToken>`.
 The insecure `x-player-id`/`?playerId=` fallback is only for development unless `ALLOW_INSECURE_PLAYER_ID_HEADER=true`.
-Legacy typed routes (`/api/run`, `/api/equipment`, `/api/school`, `/api/offline`, etc.) are mounted only outside production unless `ALLOW_LEGACY_STATE_ROUTES=true`.
+Legacy typed routes (`/api/run`, `/api/equipment`, `/api/school`, `/api/offline`, etc.) are development compatibility routes. They are mounted only when `NODE_ENV !== "production"` and `ALLOW_LEGACY_STATE_ROUTES=true`.
 
 ## Godot command API
 
@@ -59,11 +59,12 @@ Godot uses `/api/godot/command` for server-authoritative mutations of the same s
 }
 ```
 
-Response contains `success`, command `result`, `serverRevision`, and authoritative `saveData` unless `includeSaveData` is `false`. The client applies returned `saveData` through `GameState.apply_save_data()`. Frequent commands such as enemy kill batches and school XP events use compact responses and only advance `serverRevision`.
+Response contains `success`, command `result`, `serverRevision`, and authoritative `saveData` unless `includeSaveData` is `false`. The client applies returned `saveData` through `GameState.apply_save_data()`. Frequent commands such as enemy kill batches and school XP events use compact responses with server deltas and advance `serverRevision`.
 
 Supported commands:
 
 - `equipment.unlock`
+- `sync.snapshot`
 - `equipment.upgrade`
 - `artifact.upgrade`
 - `artifact.grantApexReward` (disabled; apex rewards are claimed by apex enemy kill)

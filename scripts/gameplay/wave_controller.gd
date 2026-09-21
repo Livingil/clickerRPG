@@ -155,6 +155,8 @@ func _start_wave(wave_number: int) -> void:
 	if BackendClient.logged_in:
 		await BackendClient.flush_run_rewards()
 	var wave_plan: Dictionary = await _request_wave_plan(wave_number)
+	if wave_plan.is_empty() and BackendClient.enabled and not BackendClient.should_apply_local_progress_fallback():
+		return
 	current_wave = wave_number
 	normal_spawned_this_wave = 0
 	boss_spawned_this_wave = false
@@ -173,7 +175,7 @@ func _start_wave(wave_number: int) -> void:
 		SignalBus.emit_mono_wave_started(current_wave, mono_normal_enemy_type)
 
 func _request_wave_plan(wave_number: int) -> Dictionary:
-	if not BackendClient.logged_in:
+	if not BackendClient.enabled:
 		return {}
 	var result: Dictionary = await BackendClient.request_command("wave.start", {
 		"wave": wave_number,

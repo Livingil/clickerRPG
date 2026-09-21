@@ -18,7 +18,7 @@ apiRouter.use("/auth", authRoutes);
 apiRouter.use("/player", playerRoutes);
 apiRouter.use("/godot", godotRoutes);
 
-if (env.NODE_ENV !== "production" || env.ALLOW_LEGACY_STATE_ROUTES) {
+if (env.NODE_ENV !== "production" && env.ALLOW_LEGACY_STATE_ROUTES) {
   apiRouter.use("/run", runRoutes);
   apiRouter.use("/equipment", equipmentRoutes);
   apiRouter.use("/artifact", artifactRoutes);
